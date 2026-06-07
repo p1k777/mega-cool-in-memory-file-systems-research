@@ -25,7 +25,7 @@ namespace fsgenerator {
         TBD -- интерфейс для генератора путей (пока не ясно как он должен выглядеть)
 
 
-        tree_ -- хранит подобие дерева (облегченное)
+        fs_ -- хранит файловую систему в удобном формате (облегченную)
         dirs_, files_ -- индексы внутри tree_, директории и файлы соответственно
 
         остальное -- просто служебные методы
@@ -34,7 +34,9 @@ namespace fsgenerator {
     
     public:
 
-        struct node_type {
+        using path_type = filesystem::IFileSystem::path_type;
+
+        struct tree_node_type {
             std::string name;
             size_t parent;
             size_t depth;
@@ -44,13 +46,12 @@ namespace fsgenerator {
         };
 
 
-        GeneratedFs(std::vector<node_type> tree);
+        GeneratedFs(std::vector<tree_node_type> tree);
 
         GeneratedFs(const GeneratedFs&) = default;
-        GeneratedFs(GeneratedFs&&);
+        GeneratedFs(GeneratedFs&&) = default;
 
-        GeneratedFs& operator=(const GeneratedFs&) = default;
-        GeneratedFs& operator=(GeneratedFs&&);
+        GeneratedFs& operator=(GeneratedFs);
 
         ~GeneratedFs() = default;
 
@@ -59,7 +60,12 @@ namespace fsgenerator {
 
     private:
 
-        std::vector<node_type> tree_;
+        struct FsNode {
+            path_type path;
+            bool is_file;
+        };
+
+        std::vector<FsNode> fs_;
         std::vector<size_t> dirs_;
         std::vector<size_t> files_;
     };

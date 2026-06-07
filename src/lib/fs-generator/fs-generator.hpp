@@ -53,7 +53,7 @@ namespace fsgenerator {
 
     private:
 
-        std::vector<typename GeneratedFs::node_type> tree_;
+        std::vector<typename GeneratedFs::tree_node_type> tree_;
         std::vector<size_t> fillable_dirs_;
 
         size_t target_depth_;
