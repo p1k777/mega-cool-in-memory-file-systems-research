@@ -1,0 +1,67 @@
+#pragma once
+
+#include <cstddef>
+#include <vector>
+
+#include "generated-fs.hpp"
+
+namespace fsgenerator {
+
+    class FsGenerator {
+
+    /* ========================================================================================================================================
+
+        Описание FsGenerator
+
+
+        Необходимо конструктору:
+            - D, W, F -- параметры файловой системы (глубина, ширина, заполненность)
+            - file_p (*) -- вероятность, что очередной созданный узел будет файлом (ожидаемое отношение количества файлов к количеству узлов)
+            - max_node_count (*) -- ограничение на количество узлов
+
+
+        Про копирование -- сам объект генератора хочется сделать легким, поэтому копировать его не стоит,
+        тем более внутри хранится "дерево" (оно фейковое), а генерировать точно такое же дерево -- дело малополезное
+
+        Про перемещение -- перемещать смысла чуть больше, но по-моему все равно недостаточно, поэтому пока тоже запрещаем
+
+
+        generate() -- запускается понятное дело на уже сконструированном объекте,
+        возвращает класс, с которым генератору путей будет удобно работать, но про него в другом файле
+
+        tree_ -- хранит подобие дерева (облегченное)
+        dirs_, files_, fillable_dirs_ -- индексы внутри tree_, директории, в которые еще можно расширять
+
+        остальное -- просто ограничения и служебные методы
+
+    ======================================================================================================================================== */
+
+    public:
+
+        FsGenerator(size_t D, size_t W, size_t F, double file_p=0, size_t max_node_count=0);
+
+        FsGenerator(const FsGenerator&) = delete;
+        FsGenerator(FsGenerator&&) = delete;
+
+        FsGenerator& operator=(const FsGenerator&) = delete;
+        FsGenerator& operator=(FsGenerator*&) = delete;
+
+        ~FsGenerator() = default;
+
+
+        GeneratedFs generate();
+
+    private:
+
+        std::vector<typename GeneratedFs::node_type> tree_;
+        std::vector<size_t> fillable_dirs_;
+
+        size_t target_depth_;
+        size_t target_width_;
+        double fill_;
+        double file_p_;
+        size_t max_files_count_;
+
+    };
+
+}; // namespace fsgenerator
