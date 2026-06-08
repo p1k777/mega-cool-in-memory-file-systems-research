@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <numeric>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -35,9 +36,7 @@ namespace fsgenerator {
             if (node.is_root) {
                 path = "/";
 
-                if (root_found) {
-                    /* ... */ // два корня — ошибка
-                }
+                if (root_found) { throw std::invalid_argument("Provided tree must contain only 1 root"); }
 
                 root_found = true;
             } else {
@@ -66,9 +65,7 @@ namespace fsgenerator {
             });
         }
 
-        if (!root_found) {
-            /* ... */ // нет корня — ошибка
-        }
+        if (!root_found) { throw std::invalid_argument("Provided tree must contain the root"); }
     }
 
     GeneratedFs& GeneratedFs::operator=(GeneratedFs tmp) {
