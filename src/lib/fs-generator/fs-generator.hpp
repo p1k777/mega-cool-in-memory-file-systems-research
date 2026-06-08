@@ -50,8 +50,14 @@ namespace fsgenerator {
 
 
         GeneratedFs generate();
+        
+        void clear() noexcept;
 
     private:
+
+        void add_root_();
+        void add_dir_(std::string name, size_t parent, bool is_root=false);
+        void add_file_(std::string name, size_t parent);
 
         std::vector<typename GeneratedFs::tree_node_type> tree_;
         std::vector<size_t> fillable_dirs_;

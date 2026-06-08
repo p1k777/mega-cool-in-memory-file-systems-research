@@ -1,0 +1,116 @@
+#include <algorithm>
+#include <cstddef>
+#include <stdexcept>
+#include <string>
+#include <utility>
+
+#include "fs-generator.hpp"
+#include "generated-fs.hpp"
+#include "../random/random.hpp"
+
+namespace fsgenerator {
+    
+    FsGenerator::FsGenerator(size_t D, size_t W, double F, double file_p, size_t max_nodes_count)
+        : target_depth_(D)
+        , target_width_(W)
+        , file_p_(file_p)
+        , target_nodes_count_(1)
+    {
+
+        if (W == 0) { throw std::invalid_argument("W must be positive"); }
+        if (F <= 0 || F > 1) { throw std::invalid_argument("F must be in (0, 1]"); }
+        if (file_p_ < 0 || file_p > 1) { throw std::invalid_argument("file_p must be in [0, 1]"); }
+
+        size_t complete_tree_size = 0;
+
+        size_t cur_power = 1;
+        for (size_t i = 0; i <= D; i++) {
+            complete_tree_size += cur_power;
+
+            if (static_cast<double>(complete_tree_size) * F >= max_nodes_count) {
+                target_nodes_count_ = max_nodes_count;
+                return;
+            }
+
+            if (cur_power >= max_nodes_count) {
+                target_nodes_count_ = max_nodes_count;
+                return;
+            }
+
+            cur_power *= W;
+
+        }
+
+        target_nodes_count_ = std::max((size_t)1, std::min(
+            static_cast<size_t>(complete_tree_size * F),
+            max_nodes_count
+        ));
+    }
+
+
+
+    GeneratedFs FsGenerator::generate() {
+        if (!tree_.empty()) { return GeneratedFs(tree_); }
+
+        add_dir_("", 0, true); // корень
+        
+        size_t dirs_count{0}, files_count{0};
+        random::Random rnd;
+        while(!fillable_dirs_.empty() && tree_.size() < target_nodes_count_) {
+            size_t idx = rnd.index(fillable_dirs_.size());
+            size_t node_idx = fillable_dirs_[idx];
+
+            if (rnd.probability(file_p_)) {
+                add_file_(
+                    std::string("file") + std::to_string(files_count++),
+                    node_idx
+                );
+            } else {
+                add_dir_(
+                    std::string("dir") + std::to_string(dirs_count++),
+                    node_idx
+                );
+            }
+
+            ++tree_[node_idx].children;
+            if (tree_[node_idx].children >= target_width_) {
+                std::swap(fillable_dirs_[idx], fillable_dirs_.back());
+                fillable_dirs_.pop_back();
+            }
+        }
+
+        return GeneratedFs(tree_);
+    }
+
+    void FsGenerator::clear() noexcept {
+        tree_.clear();
+        fillable_dirs_.clear();
+    }
+
+    void FsGenerator::add_dir_(std::string name, size_t parent, bool is_root) {
+        tree_.push_back({
+            .name = std::move(name),
+            .parent = parent,
+            .depth = is_root ? 0 : tree_[parent].depth + 1,
+            .children = 0,
+            .is_file = false,
+            .is_root = is_root
+        });
+
+        if (tree_.back().depth < target_depth_) {
+            fillable_dirs_.push_back(tree_.size() - 1);
+        }
+    }
+
+    void FsGenerator::add_file_(std::string name, size_t parent) {
+        tree_.push_back({
+            .name = std::move(name),
+            .parent = parent,
+            .depth = tree_[parent].depth + 1,
+            .children = 0,
+            .is_file = true,
+            .is_root = false
+        });
+    }
+
+} // namespace fsgenerator
