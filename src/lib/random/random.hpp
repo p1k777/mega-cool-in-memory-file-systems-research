@@ -14,7 +14,7 @@ namespace random {
         Random();
         Random(int64_t seed);
 
-        // вущественный x из [0, 1)
+        // вещественный x из [0, 1)
         double real() const noexcept;
 
         // целый x из [l, r]
