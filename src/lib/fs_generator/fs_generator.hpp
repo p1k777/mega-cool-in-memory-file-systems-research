@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <vector>
 
-#include "generated-fs.hpp"
+#include "generated_fs.hpp"
 
 namespace fsgenerator {
 
