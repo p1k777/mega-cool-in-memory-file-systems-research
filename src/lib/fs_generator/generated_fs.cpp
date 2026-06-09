@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "../filesystem.hpp"
-#include "generated-fs.hpp"
+#include "generated_fs.hpp"
 
 namespace fsgenerator {
 

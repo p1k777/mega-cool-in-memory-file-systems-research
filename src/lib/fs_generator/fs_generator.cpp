@@ -4,8 +4,8 @@
 #include <string>
 #include <utility>
 
-#include "fs-generator.hpp"
-#include "generated-fs.hpp"
+#include "fs_generator.hpp"
+#include "generated_fs.hpp"
 #include "../random/random.hpp"
 
 namespace fsgenerator {
