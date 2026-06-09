@@ -47,6 +47,11 @@ private:
     std::unique_ptr<Node> detach_node(const path_type& path);
     void attach_node(Node& new_parent, std::unique_ptr<Node> node, std::string new_name);
 
+    static bool glob_matches(
+        const std::string& name,
+        const std::string& pattern
+    ) noexcept;
+
     static void collect_find(
         const Node& node,
         const path_type& current_path,
