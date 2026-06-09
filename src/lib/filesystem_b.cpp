@@ -138,8 +138,20 @@ void FileSystemB::op_write(const path_type& path, const bytes_type& data) {
     index_[path] = raw;
 }
 
-IFileSystem::units_list_type FileSystemB::op_ls(const path_type&) const {
-    throw std::runtime_error("op_ls is not implemented");
+IFileSystem::units_list_type FileSystemB::op_ls(const path_type& path) const {
+    const Node* node = get_node(path);
+
+    if(node->is_file) {
+        throw std::runtime_error("ls from file");
+    }
+
+    units_list_type result;
+
+    for(const auto& child : node->children) {
+        result.push_back(join_path(path, child->name));
+    }
+
+    return result;
 }
 
 void FileSystemB::op_mv(const path_type&, const path_type&) {
