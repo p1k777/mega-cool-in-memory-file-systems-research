@@ -1,0 +1,1 @@
+add_library(rnd STATIC random.hpp random.cpp)
