@@ -38,7 +38,7 @@ namespace fsgenerator {
 
     public:
 
-        FsGenerator(size_t D, size_t W, double F, double file_p=0, size_t max_nodes_count=0);
+        FsGenerator(size_t D, size_t W, double F, double file_p=0.5, size_t max_nodes_count=1e7);
 
         FsGenerator(const FsGenerator&) = delete;
         FsGenerator(FsGenerator&&) = delete;
