@@ -5,7 +5,7 @@
 #include <random>
 #include <vector>
 
-namespace random {
+namespace rnd {
     
     class Random {
 
@@ -15,20 +15,23 @@ namespace random {
         Random(int64_t seed);
 
         // вещественный x из [0, 1)
-        double real() const noexcept;
+        double real();
 
         // целый x из [l, r]
-        int64_t integer(int64_t l, int64_t r) const noexcept;
+        int64_t integer(int64_t l, int64_t r);
 
         // целый индекс из [0, size)
-        size_t index(size_t size) const noexcept;
+        size_t index(size_t size);
 
         // true с вероятностью p
-        bool probability(double p) const noexcept;
+        bool probability(double p);
 
         // выбирает случайный элемент из вектора
         template <typename T>
-        T& choice(std::vector<T>&) const noexcept;
+        T& choice(std::vector<T>& vct) {
+            if (vct.empty()) { std::invalid_argument("vct must not be empty"); }
+            return vct[index(vct.size())];
+        }
 
     private:
 
@@ -36,5 +39,5 @@ namespace random {
 
     };
 
-} // namespace random
+} // namespace rnd
 
