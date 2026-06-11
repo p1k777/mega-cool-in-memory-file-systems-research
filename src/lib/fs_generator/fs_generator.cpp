@@ -15,6 +15,8 @@ namespace fsgenerator {
         , target_width_(W)
         , file_p_(file_p)
         , target_nodes_count_(1)
+        , files_count_(0)
+        , dirs_count_(0)
     {
 
         if (W == 0) { throw std::invalid_argument("W must be positive"); }
@@ -52,7 +54,8 @@ namespace fsgenerator {
     GeneratedFs FsGenerator::generate() {
         if (!tree_.empty()) { return GeneratedFs(tree_); }
 
-        add_dir_("", 0, true); // корень
+        add_root_();
+        grow_spine_();
         
         size_t dirs_count{0}, files_count{0};
         rnd::Random rnd;
@@ -60,23 +63,22 @@ namespace fsgenerator {
             size_t idx = rnd.index(fillable_dirs_.size());
             size_t node_idx = fillable_dirs_[idx];
 
-            if (rnd.probability(file_p_)) {
-                add_file_(
-                    std::string("file") + std::to_string(files_count++),
-                    node_idx
-                );
-            } else {
-                add_dir_(
-                    std::string("dir") + std::to_string(dirs_count++),
-                    node_idx
-                );
-            }
+            add_node_(node_idx, rnd);
 
-            ++tree_[node_idx].children;
             if (tree_[node_idx].children >= target_width_) {
                 std::swap(fillable_dirs_[idx], fillable_dirs_.back());
                 fillable_dirs_.pop_back();
             }
+        }
+
+
+        size_t max_width_idx = 0;
+        for (size_t i = 1; i < tree_.size(); i++) {
+            max_width_idx = tree_[i].children > tree_[max_width_idx].children ? i : max_width_idx;
+        }
+
+        while (tree_[max_width_idx].children < target_width_) {
+            add_node_(max_width_idx, rnd);
         }
 
         return GeneratedFs(tree_);
@@ -85,6 +87,24 @@ namespace fsgenerator {
     void FsGenerator::clear() noexcept {
         tree_.clear();
         fillable_dirs_.clear();
+    }
+
+    void FsGenerator::add_root_() {
+        add_dir_("", 0, true);
+    }
+
+    void FsGenerator::add_node_(size_t parent, rnd::Random& rnd) {
+        if (rnd.probability(file_p_)) {
+            add_file_(
+                std::string("file") + std::to_string(files_count_++),
+                parent
+            );
+        } else {
+            add_dir_(
+                std::string("dir") + std::to_string(dirs_count_++),
+                parent
+            );
+        }
     }
 
     void FsGenerator::add_dir_(std::string name, size_t parent, bool is_root) {
@@ -100,6 +120,8 @@ namespace fsgenerator {
         if (tree_.back().depth < target_depth_) {
             fillable_dirs_.push_back(tree_.size() - 1);
         }
+
+        ++tree_[parent].children;
     }
 
     void FsGenerator::add_file_(std::string name, size_t parent) {
@@ -111,6 +133,17 @@ namespace fsgenerator {
             .is_file = true,
             .is_root = false
         });
+        ++tree_[parent].children;
+    }
+
+    void FsGenerator::grow_spine_() {
+        if (tree_.empty()) { add_root_(); }
+        size_t d = tree_.back().depth;
+
+        while (d < target_depth_) {
+            add_dir_("spine" + std::to_string(d), tree_.size() - 1);
+            d = tree_.back().depth;
+        }
     }
 
 } // namespace fsgenerator

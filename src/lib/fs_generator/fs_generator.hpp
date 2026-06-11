@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "generated_fs.hpp"
+#include "../random/random.hpp"
 
 namespace fsgenerator {
 
@@ -17,7 +18,7 @@ namespace fsgenerator {
         Необходимо конструктору:
             - D, W, F -- параметры файловой системы (глубина, ширина, заполненность)
             - file_p (*) -- вероятность, что очередной созданный узел будет файлом (ожидаемое отношение количества файлов к количеству узлов)
-            - max_node_count (*) -- ограничение на количество узлов
+            - max_node_count (*) -- ограничение на количество узлов, беру себе право добавить W узлов сверх вот этой штуки
 
 
         Про копирование -- сам объект генератора хочется сделать легким, поэтому копировать его не стоит,
@@ -56,6 +57,8 @@ namespace fsgenerator {
     private:
 
         void add_root_();
+        void grow_spine_();
+        void add_node_(size_t parent, rnd::Random&);
         void add_dir_(std::string name, size_t parent, bool is_root=false);
         void add_file_(std::string name, size_t parent);
 
@@ -66,6 +69,9 @@ namespace fsgenerator {
         size_t target_width_;
         double file_p_;
         size_t target_nodes_count_;
+
+        size_t files_count_;
+        size_t dirs_count_;
 
     };
 
