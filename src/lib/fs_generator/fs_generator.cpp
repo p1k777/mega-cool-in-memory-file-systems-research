@@ -55,7 +55,7 @@ namespace fsgenerator {
         add_dir_("", 0, true); // корень
         
         size_t dirs_count{0}, files_count{0};
-        random::Random rnd;
+        rnd::Random rnd;
         while(!fillable_dirs_.empty() && tree_.size() < target_nodes_count_) {
             size_t idx = rnd.index(fillable_dirs_.size());
             size_t node_idx = fillable_dirs_[idx];
