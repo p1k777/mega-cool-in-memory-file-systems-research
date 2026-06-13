@@ -12,24 +12,26 @@ namespace fsgenerator {
 
 
 
-    GeneratedFs::GeneratedFs(std::vector<tree_node_type> tree) {
-        std::vector<size_t> order(tree.size());
+    GeneratedFs::GeneratedFs(std::vector<tree_node_type> tree)
+        : tree_(std::move(tree))
+    {
+        std::vector<size_t> order(tree_.size());
         std::iota(order.begin(), order.end(), 0);
 
         std::sort(order.begin(), order.end(),
             [&](size_t a, size_t b) {
-                return tree[a].depth < tree[b].depth;
+                return tree_[a].depth < tree_[b].depth;
             }
         );
 
-        fs_.reserve(tree.size());
+        fs_.reserve(tree_.size());
 
-        std::vector<size_t> tree_to_fs(tree.size());
+        std::vector<size_t> tree_to_fs(tree_.size());
 
         bool root_found = false;
 
         for (size_t tree_idx : order) {
-            const auto& node = tree[tree_idx];
+            const auto& node = tree_[tree_idx];
 
             path_type path;
 
@@ -81,6 +83,20 @@ namespace fsgenerator {
                 fs_impl.op_mkdir(node.path);
             }
         }
+    }
+    
+    const GeneratedFs::path_type& GeneratedFs::get_path(size_t idx) const {
+        return fs_.at(idx).path;
+    }
+
+    const std::vector<size_t>& GeneratedFs::get_files() const {
+        return files_;
+    }
+    const std::vector<size_t>& GeneratedFs::get_dirs() const {
+        return dirs_;
+    }
+    const GeneratedFs::tree_node_type& GeneratedFs::get_node(size_t idx) const {
+        return tree_.at(idx);
     }
 
 }; // namespace fsgenerator

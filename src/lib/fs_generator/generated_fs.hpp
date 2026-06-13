@@ -58,6 +58,11 @@ namespace fsgenerator {
 
         void fill(filesystem::IFileSystem&);
 
+        const path_type& get_path(size_t idx) const;
+        const std::vector<size_t>& get_files() const;
+        const std::vector<size_t>& get_dirs() const;
+        const tree_node_type& get_node(size_t idx) const;
+
     private:
 
         struct FsNode {
@@ -65,6 +70,7 @@ namespace fsgenerator {
             bool is_file;
         };
 
+        std::vector<tree_node_type> tree_;
         std::vector<FsNode> fs_;
         std::vector<size_t> dirs_;
         std::vector<size_t> files_;

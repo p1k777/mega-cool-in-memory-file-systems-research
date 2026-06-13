@@ -249,3 +249,58 @@ TEST(FsGeneratorTest, Params) {
 
 
 }
+
+TEST(GeneratedFsAccessorsTest, GetNodeAndPathReturnCorrectData) {
+    std::vector<tree_node_type> mock_tree = {
+        {"", 0, 0, 1, false, true},
+        {"folder", 0, 1, 1, false, false},
+        {"file.txt", 1, 2, 0, true, false}
+    };
+    
+    GeneratedFs gen_fs(mock_tree);
+
+    EXPECT_EQ(gen_fs.get_node(0).name, "");
+    EXPECT_TRUE(gen_fs.get_node(0).is_root);
+    
+    EXPECT_EQ(gen_fs.get_node(2).name, "file.txt");
+    EXPECT_TRUE(gen_fs.get_node(2).is_file);
+
+    EXPECT_EQ(gen_fs.get_path(0), "/"); 
+    EXPECT_EQ(gen_fs.get_path(1), "/folder");
+    EXPECT_EQ(gen_fs.get_path(2), "/folder/file.txt");
+}
+
+TEST(GeneratedFsAccessorsTest, ThrowsOutOfRangeForInvalidIndex) {
+    std::vector<tree_node_type> mock_tree = {
+        {"", 0, 0, 0, false, true}
+    };
+    
+    GeneratedFs gen_fs(mock_tree);
+
+    EXPECT_THROW(gen_fs.get_node(1), std::out_of_range);
+    EXPECT_THROW(gen_fs.get_path(999), std::out_of_range);
+}
+
+TEST(GeneratedFsAccessorsTest, GlobalListsReturnCorrectIndices) {
+    std::vector<tree_node_type> mock_tree = {
+        {"", 0, 0, 2, false, true},
+        {"dir1", 0, 1, 0, false, false},
+        {"file1.txt", 0, 1, 0, true, false},
+        {"file2.txt", 0, 1, 0, true, false}
+    };
+    
+    GeneratedFs gen_fs(mock_tree);
+
+    const auto& files = gen_fs.get_files(); 
+    const auto& dirs = gen_fs.get_dirs();
+
+    ASSERT_EQ(files.size(), 2);
+    
+    EXPECT_EQ(files[0], 2);
+    EXPECT_EQ(files[1], 3);
+
+    ASSERT_EQ(dirs.size(), 2);
+    
+    EXPECT_EQ(dirs[0], 0);
+    EXPECT_EQ(dirs[1], 1);
+}
