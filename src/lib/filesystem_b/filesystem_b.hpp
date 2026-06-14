@@ -37,7 +37,13 @@ private:
     static path_type parent_path(const path_type& path);
     static path_type basename(const path_type& path);
     static path_type join_path(const path_type& parent, const path_type& name);
-    
+
+
+    static bool matches_mask(const path_type& name, const path_type& mask);
+
+    path_type build_path(const Node* node) const;
+
+    void find_dfs(const Node* node, const path_type& pattern, units_list_type& result) const;
    
 };
 

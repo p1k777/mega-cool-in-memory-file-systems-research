@@ -1,6 +1,7 @@
 #include "filesystem_b.hpp"
 
 #include <stdexcept>
+#include <regex>
 
 namespace filesystem {
 
@@ -158,12 +159,78 @@ void FileSystemB::op_mv(const path_type&, const path_type&) {
     throw std::runtime_error("op_mv is not implemented");
 }
 
-IFileSystem::units_list_type FileSystemB::op_find(const path_type&, const path_type&) const {
-    throw std::runtime_error("op_find is not implemented");
+IFileSystem::units_list_type FileSystemB::op_find(const path_type& path, const path_type& pattern) const {
+    const Node* node = get_node(path);
+
+    if(node->is_file) {
+        throw std::runtime_error("find from file");
+    }
+
+    units_list_type result;
+    find_dfs(node, pattern, result);
+
+    return result;
 }
 
 size_t FileSystemB::get_memory_usage() const noexcept {
     return 0;
+}
+
+bool FileSystemB::matches_mask(const path_type& name, const path_type& mask) {
+    std::string regex_pattern = "^";
+
+    for(char c : mask) {
+        if(c == '*') {
+            regex_pattern += ".*";
+        } else if(c == '?') {
+            regex_pattern += ".";
+        } else if(c == '.' || c == '\\' || c == '+' || c == '(' || c == ')' ||
+                  c == '[' || c == ']' || c == '{' || c == '}' || c == '^' ||
+                  c == '$' || c == '|') {
+            regex_pattern += '\\';
+            regex_pattern += c;
+        } else {
+            regex_pattern += c;
+        }
+    }
+
+    regex_pattern += "$";
+
+    return std::regex_match(name, std::regex(regex_pattern));
+}
+
+IFileSystem::path_type FileSystemB::build_path(const Node* node) const {
+    if(node == root_.get()) {
+        return "/";
+    }
+
+    std::vector<std::string> parts;
+
+    while(node != nullptr && node != root_.get()) {
+        parts.push_back(node->name);
+        node = node->parent;
+    }
+
+    path_type result;
+
+    for(auto it = parts.rbegin(); it != parts.rend(); ++it) {
+        result += "/";
+        result += *it;
+    }
+
+    return result.empty() ? "/" : result;
+}
+
+void FileSystemB::find_dfs(const Node* node, const path_type& pattern,units_list_type& result) const {
+    path_type current_path = build_path(node);
+
+    if(node != root_.get() && matches_mask(node->name, pattern)) {
+        result.push_back(current_path);
+    }
+
+    for(const auto& child : node->children) {
+        find_dfs(child.get(), pattern, result);
+    }
 }
 
 } // namespace filesystem
