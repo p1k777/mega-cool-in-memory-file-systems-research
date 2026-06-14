@@ -57,3 +57,45 @@ TEST(FileSystemB, FindByMask) {
     EXPECT_NE(std::find(one_char.begin(), one_char.end(), "/a/b/file1.cpp"), one_char.end());
     EXPECT_EQ(std::find(one_char.begin(), one_char.end(), "/a/b/main.cpp"), one_char.end());
 }
+
+TEST(FileSystemB, MoveFile) {
+    filesystem::FileSystemB fs;
+
+    fs.op_mkdir("/a");
+    fs.op_mkdir("/b");
+
+    filesystem::IFileSystem::bytes_type data = {'h', 'i'};
+
+    fs.op_write("/a/file.txt", data);
+    fs.op_mv("/a/file.txt", "/b/moved.txt");
+
+    EXPECT_EQ(fs.op_read("/b/moved.txt"), data);
+
+    auto list_a = fs.op_ls("/a");
+    EXPECT_EQ(std::find(list_a.begin(), list_a.end(), "/a/file.txt"), list_a.end());
+
+    auto list_b = fs.op_ls("/b");
+    EXPECT_NE(std::find(list_b.begin(), list_b.end(), "/b/moved.txt"), list_b.end());
+}
+
+TEST(FileSystemB, MoveDirectory) {
+    filesystem::FileSystemB fs;
+
+    fs.op_mkdir("/a");
+    fs.op_mkdir("/a/sub");
+    fs.op_mkdir("/target");
+
+    filesystem::IFileSystem::bytes_type data = {'o', 'k'};
+
+    fs.op_write("/a/sub/file.txt", data);
+
+    fs.op_mv("/a", "/target/new_a");
+
+    EXPECT_EQ(fs.op_read("/target/new_a/sub/file.txt"), data);
+
+    auto found = fs.op_find("/target", "*.txt");
+    EXPECT_NE(
+        std::find(found.begin(), found.end(), "/target/new_a/sub/file.txt"),
+        found.end()
+    );
+}

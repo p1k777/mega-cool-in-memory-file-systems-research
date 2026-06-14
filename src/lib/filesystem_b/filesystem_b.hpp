@@ -44,6 +44,13 @@ private:
     path_type build_path(const Node* node) const;
 
     void find_dfs(const Node* node, const path_type& pattern, units_list_type& result) const;
+
+    static bool is_inside(const path_type& from, const path_type& to);
+
+    void erase_index_for_subtree(Node* node);
+    void add_index_for_subtree(Node* node);
+
+    std::unique_ptr<Node> detach_from_parent(Node* node);
    
 };
 

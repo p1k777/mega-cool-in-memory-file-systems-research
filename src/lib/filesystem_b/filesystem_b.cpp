@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <regex>
+#include <algorithm>
 
 namespace filesystem {
 
@@ -155,8 +156,48 @@ IFileSystem::units_list_type FileSystemB::op_ls(const path_type& path) const {
     return result;
 }
 
-void FileSystemB::op_mv(const path_type&, const path_type&) {
-    throw std::runtime_error("op_mv is not implemented");
+void FileSystemB::op_mv(const path_type& from, const path_type& to) {
+    if(from == "/") {
+        throw std::runtime_error("cannot move root");
+    }
+
+    auto from_it = index_.find(from);
+
+    if(from_it == index_.end()) {
+        throw std::runtime_error("source does not exist");
+    }
+
+    if(index_.find(to) != index_.end()) {
+        throw std::runtime_error("destination already exists");
+    }
+
+    if(is_inside(from, to)) {
+        throw std::runtime_error("cannot move directory inside itself");
+    }
+
+    Node* node = from_it->second;
+
+    path_type new_parent_path = parent_path(to);
+    path_type new_name = basename(to);
+
+    Node* new_parent = get_node(new_parent_path);
+
+    if(new_parent->is_file) {
+        throw std::runtime_error("new parent is file");
+    }
+
+    erase_index_for_subtree(node);
+
+    std::unique_ptr<Node> owned = detach_from_parent(node);
+
+    owned->name = new_name;
+    owned->parent = new_parent;
+
+    Node* raw = owned.get();
+
+    new_parent->children.push_back(std::move(owned));
+
+    add_index_for_subtree(raw);
 }
 
 IFileSystem::units_list_type FileSystemB::op_find(const path_type& path, const path_type& pattern) const {
@@ -231,6 +272,56 @@ void FileSystemB::find_dfs(const Node* node, const path_type& pattern,units_list
     for(const auto& child : node->children) {
         find_dfs(child.get(), pattern, result);
     }
+}
+
+bool FileSystemB::is_inside(const path_type& from, const path_type& to) {
+    if(to.size() <= from.size()) {
+        return false;
+    }
+
+    if(to.compare(0, from.size(), from) != 0) {
+        return false;
+    }
+
+    return to[from.size()] == '/';
+}
+
+void FileSystemB::erase_index_for_subtree(Node* node) {
+    index_.erase(build_path(node));
+
+    for(auto& child : node->children) {
+        erase_index_for_subtree(child.get());
+    }
+}
+
+void FileSystemB::add_index_for_subtree(Node* node) {
+    index_[build_path(node)] = node;
+
+    for(auto& child : node->children) {
+        add_index_for_subtree(child.get());
+    }
+}
+
+std::unique_ptr<FileSystemB::Node> FileSystemB::detach_from_parent(Node* node) {
+    Node* parent = node->parent;
+    auto& children = parent->children;
+
+    auto it = std::find_if(
+        children.begin(),
+        children.end(),
+        [node](const std::unique_ptr<Node>& child) {
+            return child.get() == node;
+        }
+    );
+
+    if(it == children.end()) {
+        throw std::runtime_error("broken tree");
+    }
+
+    std::unique_ptr<Node> owned = std::move(*it);
+    children.erase(it);
+
+    return owned;
 }
 
 } // namespace filesystem
