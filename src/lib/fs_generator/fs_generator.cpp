@@ -90,7 +90,18 @@ namespace fsgenerator {
     }
 
     void FsGenerator::add_root_() {
-        add_dir_("", 0, true);
+        tree_.push_back({
+            .name = "",
+            .parent = 0,
+            .depth = 0,
+            .children = 0,
+            .is_file = false,
+            .is_root = true
+        });
+
+        if (tree_.back().depth < target_depth_) {
+            fillable_dirs_.push_back(tree_.size() - 1);
+        }
     }
 
     void FsGenerator::add_node_(size_t parent, rnd::Random& rnd) {
