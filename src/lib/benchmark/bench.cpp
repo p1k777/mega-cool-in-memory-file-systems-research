@@ -99,14 +99,16 @@ double Benchmark::AvgLatency(const std::vector<double> &v)
 
 double Benchmark::P99Calc(const std::vector<double> &v)
 {
-    sort(v.begin(), v.end());
+    std::vector<double> tmp = v;
+    std::sort(tmp.begin(), tmp.end());
     size_t idx = static_cast<size_t>(0.99 * v.size());
     return v[idx];
 }
 
 double Benchmark::ThroughputCalc(size_t op_num, double total_time)
 {
-    return (op_num / total_time);
+    double time_sec = total_time / 1'000'000;
+    return (op_num / time_sec);
 }
 
 
