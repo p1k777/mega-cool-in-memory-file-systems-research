@@ -16,7 +16,7 @@ namespace pathgen {
         
         ZipfDistribution(int_ l, int_ r, double s) : l_(l), r_(r), u_distr_(0, 1) {
             if (r < l) { throw std::invalid_argument("r must be >= l"); }
-            if (s > 0) { throw std::invalid_argument("s must be > 0"); }
+            if (s <= 0) { throw std::invalid_argument("s must be > 0"); }
 
             int_ n = r - l + 1;
             if (s == 1) {
