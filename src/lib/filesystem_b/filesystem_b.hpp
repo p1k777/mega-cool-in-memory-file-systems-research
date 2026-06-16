@@ -2,11 +2,13 @@
 #include "../filesystem.hpp"
 
 #include <memory>
+#include <memory_resource>
+#include <string_view>
 #include <unordered_map>
 
 namespace filesystem {
 
-class FileSystemB final: public IFileSystem {
+class FileSystemB : public IFileSystem {
 public:
     FileSystemB();
     bytes_type op_read(const path_type&) const override;
@@ -21,16 +23,48 @@ public:
     size_t get_memory_usage() const noexcept override;
 
 private:
+    class CountingMemoryResource : public std::pmr::memory_resource {
+    public:
+        size_t bytes_allocated() const noexcept;
+
+    private:
+        std::pmr::memory_resource* upstream_ = std::pmr::get_default_resource();
+        size_t bytes_allocated_ = 0;
+
+        void* do_allocate(size_t bytes, size_t alignment) override;
+        void do_deallocate(void* ptr, size_t bytes, size_t alignment) override;
+        bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override;
+    };
+    
+    using PmrString = std::pmr::string;
+    using PmrByte = bytes_type::value_type;
+    using PmrBytes = std::pmr::vector<PmrByte>;
+
     struct Node {
-        std::string name;
+        PmrString name;
         bool is_file = false;
-        bytes_type data;
+        PmrBytes data;
         Node* parent = nullptr;
-        std::vector<std::unique_ptr<Node>> children;
+        std::pmr::vector<std::unique_ptr<Node>> children;
+
+        Node(
+            std::pmr::memory_resource* memory,
+            std::string_view name_value,
+            Node* parent_value
+        );
     };
 
+    CountingMemoryResource memory_;
+
     std::unique_ptr<Node> root_;
-    std::unordered_map<path_type, Node*> index_;
+
+    std::pmr::unordered_map<PmrString, Node*> index_;
+
+    size_t node_count_ = 0;
+
+    std::unique_ptr<Node> create_node(std::string_view name, Node* parent, bool is_file);
+
+    static path_type to_path(const PmrString& value);
 
     Node* get_node(const path_type& path);
     const Node* get_node(const path_type& path) const;
@@ -51,6 +85,8 @@ private:
     void add_index_for_subtree(Node* node);
 
     std::unique_ptr<Node> detach_from_parent(Node* node);
+
+    PmrString make_key(const path_type& path) const;
    
 };
 
