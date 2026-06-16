@@ -1,2 +1,3 @@
 add_subdirectory(random)
 add_subdirectory(filesystem_b)
+add_subdirectory(operation_generation)
