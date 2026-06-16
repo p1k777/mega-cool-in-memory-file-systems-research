@@ -114,6 +114,8 @@ IFileSystem::path_type FileSystemB::join_path(const path_type& parent, const pat
 }
 
 IFileSystem::bytes_type FileSystemB::op_read(const path_type& path) const {
+    validate_path(path);
+
     const Node* node = get_node(path);
 
     if(!node->is_file) {
@@ -124,6 +126,8 @@ IFileSystem::bytes_type FileSystemB::op_read(const path_type& path) const {
 }
 
 void FileSystemB::op_mkdir(const path_type& path) {
+    validate_path(path);
+
     if(path == "/") {
         return;
     }
@@ -150,6 +154,8 @@ void FileSystemB::op_mkdir(const path_type& path) {
 }
 
 void FileSystemB::op_write(const path_type& path, const bytes_type& data) {
+    validate_path(path); 
+    
     auto it = index_.find(make_key(path));
 
     if(it != index_.end()) {
@@ -182,6 +188,8 @@ void FileSystemB::op_write(const path_type& path, const bytes_type& data) {
 }
 
 IFileSystem::units_list_type FileSystemB::op_ls(const path_type& path) const {
+    validate_path(path);
+
     const Node* node = get_node(path);
 
     if(node->is_file) {
@@ -198,6 +206,9 @@ IFileSystem::units_list_type FileSystemB::op_ls(const path_type& path) const {
 }
 
 void FileSystemB::op_mv(const path_type& from, const path_type& to) {
+    validate_path(from);
+    validate_path(to);
+    
     if(from == "/") {
         throw std::runtime_error("cannot move root");
     }
@@ -242,6 +253,8 @@ void FileSystemB::op_mv(const path_type& from, const path_type& to) {
 }
 
 IFileSystem::units_list_type FileSystemB::op_find(const path_type& path, const path_type& pattern) const {
+    validate_path(path);
+
     const Node* node = get_node(path);
 
     if(node->is_file) {
@@ -365,6 +378,47 @@ std::unique_ptr<FileSystemB::Node> FileSystemB::detach_from_parent(Node* node) {
     children.erase(it);
 
     return owned;
+}
+
+void FileSystemB::validate_path(const path_type& path) {
+    if(path.empty()) {
+        throw std::runtime_error("path is empty");
+    }
+
+    if(path[0] != '/') {
+        throw std::runtime_error("path must be absolute");
+    }
+
+    if(path == "/") {
+        return;
+    }
+
+    if(path.back() == '/') {
+        throw std::runtime_error("path has trailing slash");
+    }
+
+    size_t start = 1;
+
+    while(start < path.size()) {
+        size_t slash_pos = path.find('/', start);
+        size_t end = slash_pos == path_type::npos ? path.size() : slash_pos;
+
+        path_type component = path.substr(start, end - start);
+
+        if(component.empty()) {
+            throw std::runtime_error("path has empty component");
+        }
+
+        if(component == "." || component == "..") {
+            throw std::runtime_error("path has invalid component");
+        }
+
+        if(slash_pos == path_type::npos) {
+            break;
+        }
+
+        start = slash_pos + 1;
+    }
 }
 
 } // namespace filesystem

@@ -68,6 +68,9 @@ private:
 
     Node* get_node(const path_type& path);
     const Node* get_node(const path_type& path) const;
+
+    static void validate_path(const path_type& path);
+
     static path_type parent_path(const path_type& path);
     static path_type basename(const path_type& path);
     static path_type join_path(const path_type& parent, const path_type& name);
