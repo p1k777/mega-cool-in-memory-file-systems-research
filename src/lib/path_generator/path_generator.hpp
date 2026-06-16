@@ -7,7 +7,7 @@
 #include "../filesystem.hpp"
 #include "../fs_generator/generated_fs.hpp"
 #include "../random/random.hpp"
-#include "exported/zipfian_int_distribution.h"
+#include "external/zipfian_int_distribution.h"
 
 namespace pathgen {
     
