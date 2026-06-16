@@ -1,0 +1,77 @@
+#pragma once
+
+#include <cstddef>
+#include <vector>
+
+#include "../common.hpp"
+#include "../filesystem.hpp"
+#include "../fs_generator/generated_fs.hpp"
+#include "../random/random.hpp"
+#include "zipf_distribution.hpp"
+
+namespace pathgen {
+    
+    class IPathGenerator {
+    public:
+        using path_type = filesystem::IFileSystem::path_type;
+
+        IPathGenerator(const fsgenerator::GeneratedFs& fs, double loc);
+
+        std::vector<path_type> generate(const std::vector<OperationType>&) noexcept;
+
+        virtual ~IPathGenerator() = default;
+
+    protected:
+
+        virtual size_t gen_file_() noexcept = 0;
+        virtual size_t gen_dir_() noexcept = 0;
+        virtual path_type gen_pattern_() noexcept = 0;
+
+        const fsgenerator::GeneratedFs& generated_fs_;
+        double loc_;
+        size_t last_dir_;
+
+        struct Children {
+            std::vector<size_t> dirs;
+            std::vector<size_t> files;
+        };
+        std::vector<Children> children_;
+
+        rnd::Random rnd_;
+    };
+
+
+    class UniformPathGenerator : public IPathGenerator {
+    public:
+
+        UniformPathGenerator(const fsgenerator::GeneratedFs& fs, double loc);
+        
+    private:
+        size_t gen_file_() noexcept override;
+        size_t gen_dir_() noexcept override;
+        path_type gen_pattern_() noexcept override;
+    };
+
+
+    class ZipfPathgenerator : public IPathGenerator {
+    public:
+
+        ZipfPathgenerator(const fsgenerator::GeneratedFs& fs, double s, double loc);
+
+    private:
+        size_t gen_file_() noexcept override;
+        size_t gen_dir_() noexcept override;
+        path_type gen_pattern_() noexcept override;
+
+        double s_;
+        ZipfDistribution<size_t> files_distr_;
+        ZipfDistribution<size_t> dirs_distr_;
+
+        std::vector<size_t> rank_to_file_;
+        std::vector<size_t> rank_to_dir_;
+
+        std::vector<ZipfDistribution<size_t>> small_distrs_;
+    };
+
+} // namespace pathgen
+
