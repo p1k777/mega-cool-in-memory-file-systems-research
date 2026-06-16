@@ -8,5 +8,4 @@ target_link_libraries(test_random PRIVATE
     GTest::gtest_main
 )
 
-include(GoogleTest)
 gtest_discover_tests(test_random)

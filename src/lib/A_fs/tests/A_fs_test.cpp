@@ -1,4 +1,4 @@
-#include "../src/lib/A_fs.hpp"
+#include "../A_fs.hpp"
 
 #include <gtest/gtest.h>
 
