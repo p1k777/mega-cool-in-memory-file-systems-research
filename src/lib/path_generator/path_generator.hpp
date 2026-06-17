@@ -17,7 +17,7 @@ namespace pathgen {
 
         IPathGenerator(const fsgenerator::GeneratedFs& fs, double loc);
 
-        std::vector<path_type> generate(const std::vector<OperationType>&) noexcept;
+        std::vector<path_type> generate(const std::vector<OperationType>&);
 
         virtual ~IPathGenerator() = default;
 
@@ -25,7 +25,7 @@ namespace pathgen {
 
         virtual size_t gen_file_() noexcept = 0;
         virtual size_t gen_dir_() noexcept = 0;
-        virtual path_type gen_pattern_() noexcept = 0;
+        virtual path_type gen_pattern_() = 0;
 
         const fsgenerator::GeneratedFs& generated_fs_;
         double loc_;
@@ -38,6 +38,8 @@ namespace pathgen {
         std::vector<Children> children_;
 
         rnd::Random rnd_;
+
+        size_t cnt_;
     };
 
 
@@ -49,19 +51,19 @@ namespace pathgen {
     private:
         size_t gen_file_() noexcept override;
         size_t gen_dir_() noexcept override;
-        path_type gen_pattern_() noexcept override;
+        path_type gen_pattern_() override;
     };
 
 
-    class ZipfPathgenerator : public IPathGenerator {
+    class ZipfPathGenerator : public IPathGenerator {
     public:
 
-        ZipfPathgenerator(const fsgenerator::GeneratedFs& fs, double s, double loc);
+        ZipfPathGenerator(const fsgenerator::GeneratedFs& fs, double s, double loc);
 
     private:
         size_t gen_file_() noexcept override;
         size_t gen_dir_() noexcept override;
-        path_type gen_pattern_() noexcept override;
+        path_type gen_pattern_() override;
 
         double s_;
         ZipfDistribution<size_t> files_distr_;
