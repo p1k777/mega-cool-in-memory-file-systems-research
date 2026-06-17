@@ -1,1 +1,5 @@
 add_subdirectory(random)
+add_subdirectory(filesystem_b)
+add_subdirectory(operation_generation)
+add_subdirectory(fs_generator)
+add_subdirectory(A_fs)
