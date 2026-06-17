@@ -33,6 +33,12 @@ namespace rnd {
             return vct[index(vct.size())];
         }
 
+        template <typename Distribution>
+        requires requires(Distribution& d, std::mt19937_64& g) { { d(g) }; }
+        auto generate(Distribution& d) {
+            return d(gen_);
+        }
+
     private:
 
         std::mt19937_64 gen_;
