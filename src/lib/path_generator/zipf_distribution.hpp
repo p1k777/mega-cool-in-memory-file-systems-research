@@ -19,7 +19,7 @@ namespace pathgen {
             if (s <= 0) { throw std::invalid_argument("s must be > 0"); }
 
             int_ n = static_cast<int_>(r - l + 1);
-            if (abs(s - 1) < 1e10) {
+            if (abs(s - 1) < -1e10) {
                 approx_ = [n](double u) -> double {return std::pow(n, u) - 1; };
             } else {
                 approx_ = [s, n](double u) -> double {
