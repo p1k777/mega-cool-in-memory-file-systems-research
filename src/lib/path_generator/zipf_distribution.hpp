@@ -18,9 +18,9 @@ namespace pathgen {
             if (r < l) { throw std::invalid_argument("r must be >= l"); }
             if (s <= 0) { throw std::invalid_argument("s must be > 0"); }
 
-            int_ n = r - l + 1;
-            if (s == 1) {
-                approx_ = [s, n](double u) -> double {return std::pow(n, u) - 1; };
+            int_ n = static_cast<int_>(r - l + 1);
+            if (abs(s - 1) < 1e10) {
+                approx_ = [n](double u) -> double {return std::pow(n, u) - 1; };
             } else {
                 approx_ = [s, n](double u) -> double {
                     return std::pow(
@@ -33,7 +33,10 @@ namespace pathgen {
 
         template <typename Generator>
         requires requires(Generator& g) { {g()} -> std::convertible_to<size_t>; }
-        int_ operator()(Generator& g) { return std::min<int_>(l_ + std::floor(approx_(u_distr_(g))), r_); }
+        int_ operator()(Generator& g) {
+            int_ offset = static_cast<int_>(std::floor(approx_(u_distr_(g))));
+            return std::min<int_>(l_ + offset, r_);
+        }
     
     private:
 
