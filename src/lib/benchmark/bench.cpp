@@ -9,20 +9,64 @@ inline auto Now() {
 }
 
 
-Metrics Benchmark::run(
+Metrics Benchmark::OverallRun(
+        filesystem::IFileSystem &fs, 
+        const ExperimentConfig &cfg)
+{
+
+    fsgenerator::FsGenerator fs(cfg.depth,
+                                cfg.width,
+                                cfg.fill_factor);
+    
+
+    Metrics avg_result;
+    for (int i = 0; i < cfg.repeats; ++i) {
+        avg_result += SingleRun(fs, cfg);
+    }
+    avg_result /= cfg.repeats;
+
+    return avg_result;
+}
+
+Metrics Benchmark::SingleRun(
         filesystem::IFileSystem &fs, 
         const ExperimentConfig &cfg)
 {
     // FsGenerator(size_t D, size_t W, double F, double file_p=0.5, size_t max_nodes_count=1e7);
     // ну и тут кароче строим дерево файловой системы то сё
-    fsgenerator::FsGenerator fs(cfg.depth,
-                                cfg.width,
-                                cfg.fill_factor);
-    
+    fsgenerator::FsGenerator fs_generator(cfg.depth, cfg.width, cfg.fill_factor);
+    fsgenerator::GeneratedFs file_system = fs_generator.generate();
+
+
     Metrics result;
     
-    // пусть есть операции
-    std::vector <Operation> operations(100);
+    std::vector <OperationType> op_types = generate_operations(
+        cfg.operations,
+        cfg.p_read,
+        cfg.p_write,
+        cfg.p_mkdir,
+        cfg.p_ls,
+        cfg.p_mv,
+        cfg.p_find
+    );
+
+    pathgen::UniformPathGenerator uni_path_gen(file_system, cfg.locality);
+    std::vector <filesystem::IFileSystem::path_type> uni_paths = uni_path_gen.generate(op_types);
+    std::vector <filesystem::IFileSystem::path_type> uni_paths_2 = uni_path_gen.generate(op_types);
+
+
+    std::vector <Operation> operations;
+    for (int i = 0; i < cfg.operations; ++i) {
+        Operation tmp = Operation{
+            .type = op_types[i],
+            .path = uni_paths[i],
+            .second_path = uni_paths_2[i]
+        };
+
+        operations.push_back(tmp);
+    }
+
+
     std::vector <double> latencies;
     double total_time = 0.0;
 
@@ -41,9 +85,11 @@ Metrics Benchmark::run(
     result.avg_latency_us = AvgLatency(latencies);
     result.p99_latency_us = P99Calc(latencies);
     result.throughput_ops_sec = ThroughputCalc(cfg.operations, total_time);
+    result.memory_usage_bytes = fs.get_memory_usage();
 
     return result;
 }
+
 
 void Benchmark::executeOperation(
         filesystem::IFileSystem &fs, 
