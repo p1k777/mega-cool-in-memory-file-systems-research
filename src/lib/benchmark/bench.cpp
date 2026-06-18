@@ -14,6 +14,15 @@ Metrics Benchmark::OverallRun(
         const ExperimentConfig &cfg)
 {
     
+    filesystem::IFileSystem *ptr;
+    if (cfg.fs_type == FileSystemType::A) {
+        ptr = new filesystem::TreeFileSystem;
+    } else if (cfg.fs_type == FileSystemType::B) {
+        ptr = new filesystem::FileSystemB;
+    } else {
+        ptr = new filesystem::FlatHashFileSystem;
+    }
+    
     fsgenerator::FsGenerator fs_generator(cfg.depth, cfg.width, cfg.fill_factor);
     fsgenerator::GeneratedFs file_system = fs_generator.generate();
     file_system.fill(fs);
@@ -60,7 +69,7 @@ Metrics Benchmark::OverallRun(
 
     Metrics avg_result;
     for (int i = 0; i < cfg.repeats; ++i) {
-        avg_result += SingleRun(fs, cfg, ops);
+        avg_result += SingleRun(*ptr, file_system, cfg, ops);
     }
     avg_result /= cfg.repeats;
 
@@ -68,13 +77,13 @@ Metrics Benchmark::OverallRun(
 }
 
 Metrics Benchmark::SingleRun(
-        filesystem::IFileSystem &fs, 
+        filesystem::IFileSystem &fs,
+        fsgenerator::GeneratedFs &generator,
         const ExperimentConfig &cfg,
         const std::vector <Operation> &operations)
 {
-    fsgenerator::FsGenerator fs_generator(cfg.depth, cfg.width, cfg.fill_factor);
-    fsgenerator::GeneratedFs file_system = fs_generator.generate();
 
+    generator.fill(fs);
     Metrics result;
 
 
@@ -139,7 +148,6 @@ void Benchmark::executeOperation(
 
             break;
 
-
     }
 
 }
@@ -166,6 +174,36 @@ double Benchmark::ThroughputCalc(size_t op_num, double total_time)
 {
     double time_sec = total_time / 1'000'000;
     return (op_num / time_sec);
+}
+
+void Benchmark::WriteMetrics(const Metrics& metrics,  const ExperimentConfig& cfg, const std::string& path) 
+{
+    std::ofstream file(path + "/metrics.txt");
+
+    // Параметры дерева
+    file << "depth " << cfg.depth << '\n';
+    file << "width " << cfg.width << '\n';
+    file << "fill_factor " << cfg.fill_factor << '\n';
+
+    file << "p_read " << cfg.p_read << '\n';
+    file << "p_write " << cfg.p_write << '\n';
+    file << "p_mkdir " << cfg.p_mkdir << '\n';
+    file << "p_ls " << cfg.p_ls << '\n';
+    file << "p_mv " << cfg.p_mv << '\n';
+    file << "p_find " << cfg.p_find << '\n';
+    
+    file << "distribution ";
+    if (cfg.distribution == Distribution::Zipf)
+        file << "zipf " << cfg.zipf_p;
+    else 
+        file << "uniform";
+    file << '\n';
+    
+    // Результат работы
+    file << "avg_latency_us " << metrics.avg_latency_us << '\n';    
+    file << "p99_latency_us " << metrics.p99_latency_us << '\n';    
+    file << "throughput_ops_sec " << metrics.throughput_ops_sec << '\n';    
+    file << "memory_usage_bytes " << metrics.memory_usage_bytes << '\n';
 }
 
 

@@ -3,12 +3,16 @@
 #include <string>
 #include <chrono>
 #include <algorithm>
+#include <fstream>
 
 #include "../common.hpp"
 #include "../fs_generator/fs_generator.hpp"
 #include "../fs_generator/generated_fs.hpp"
 #include "../path_generator/path_generator.hpp"
 #include "../operation_generation/operation_generator.hpp"
+#include "../A_fs/A_fs.hpp"
+#include "../filesystem_b/filesystem_b.hpp"
+#include "../C_fs/C_fs.hpp"
 
 namespace benchmark {
 
@@ -53,6 +57,13 @@ enum class Distribution
     Zipf
 };
 
+enum class FileSystemType 
+{
+    A,
+    B,
+    C
+};
+
 struct ExperimentConfig
 {
     // дерево
@@ -80,6 +91,7 @@ struct ExperimentConfig
 
     size_t operations;
     size_t repeats;
+    FileSystemType fs_type;
 };
 
 
@@ -93,8 +105,10 @@ public:
 
 
     Metrics OverallRun(filesystem::IFileSystem& fs, const ExperimentConfig& cfg);
-    Metrics SingleRun(filesystem::IFileSystem& fs, const ExperimentConfig& cfg, const std::vector <Operation> &);
-    
+    Metrics SingleRun(filesystem::IFileSystem& fs, fsgenerator::GeneratedFs&, const ExperimentConfig& cfg, const std::vector <Operation> &);
+  
+    void WriteMetrics(const Metrics&, const ExperimentConfig&, const std::string&);
+
 private:
 
     void executeOperation(
