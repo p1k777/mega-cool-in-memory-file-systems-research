@@ -25,7 +25,6 @@ namespace pathgen {
 
         virtual size_t gen_file_() noexcept = 0;
         virtual size_t gen_dir_() noexcept = 0;
-        virtual path_type gen_pattern_() = 0;
 
         const fsgenerator::GeneratedFs& generated_fs_;
         double loc_;
@@ -51,7 +50,6 @@ namespace pathgen {
     private:
         size_t gen_file_() noexcept override;
         size_t gen_dir_() noexcept override;
-        path_type gen_pattern_() override;
     };
 
 
@@ -63,7 +61,6 @@ namespace pathgen {
     private:
         size_t gen_file_() noexcept override;
         size_t gen_dir_() noexcept override;
-        path_type gen_pattern_() override;
 
         double s_;
         ZipfDistribution<size_t> files_distr_;
