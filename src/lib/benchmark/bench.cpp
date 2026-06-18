@@ -59,8 +59,6 @@ Metrics Benchmark::OverallRun(
         if (op_types[i] == OperationType::Move) {
             operation.second_path = paths[p_idx];
             p_idx++;
-        } else if (op_types[i] == OperationType::Find) {
-            swap(operation.pattern, operation.path);
         }
 
         ops.push_back(operation);
@@ -76,7 +74,7 @@ Metrics Benchmark::OverallRun(
 }
 
 Metrics Benchmark::SingleRun(
-        fsgenerator::GeneratedFs file_system,
+        fsgenerator::GeneratedFs &file_system,
         const ExperimentConfig &cfg,
         const std::vector <Operation> &operations)
 {
@@ -148,8 +146,8 @@ void Benchmark::executeOperation(
             break;
 
         case OperationType::Write:
-            filesystem::IFileSystem::bytes_type some_bullshit;
-            fs.op_write(op.path, some_bullshit);
+            filesystem::IFileSystem::bytes_type some_memory(100, 'a');
+            fs.op_write(op.path, some_memory);
 
             break;
 

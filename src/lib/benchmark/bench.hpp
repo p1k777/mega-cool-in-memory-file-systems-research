@@ -21,7 +21,7 @@ struct Operation {
 
     std::string path;
     std::string second_path;
-    std::string pattern; // для поиска 
+    std::string pattern = "*"; // для поиска 
 };
 
 struct ProbabilityProfile {
@@ -56,32 +56,29 @@ enum class FileSystemType
 
 struct ExperimentConfig
 {
-    // дерево
+    int depth = 0;
+    int width = 0;
 
-    int depth;
-    int width;
-    double fill_factor;
+    double fill_factor = 0.0;
 
-    // probability 
+    double p_read = 0.0;
+    double p_write = 0.0;
+    double p_mkdir = 0.0;
+    double p_ls = 0.0;
+    double p_mv = 0.0;
+    double p_find = 0.0;
 
-    double p_read;
-    double p_write;
-    double p_mkdir;
-    double p_ls;
-    double p_mv;
-    double p_find;
+    Distribution distribution =
+        Distribution::Uniform;
 
-    // параметры доступа 
+    double locality = 0.0;
+    double zipf_p = 0.0;
 
-    Distribution distribution;
-    double locality;
-    double zipf_p;
+    size_t operations = 0;
+    size_t repeats = 1;
 
-    // параметры эксперимента
-
-    size_t operations;
-    size_t repeats;
-    FileSystemType fs_type;
+    FileSystemType fs_type =
+        FileSystemType::A;
 };
 
 const std::vector<ProbabilityProfile> profiles {
@@ -109,7 +106,7 @@ public:
 
 
     Metrics OverallRun(filesystem::IFileSystem& fs, const ExperimentConfig& cfg);
-    Metrics SingleRun(fsgenerator::GeneratedFs, const ExperimentConfig&, const std::vector <Operation> &);
+    Metrics SingleRun(fsgenerator::GeneratedFs&, const ExperimentConfig&, const std::vector <Operation> &);
   
     void GenerateDataset(filesystem::IFileSystem& fs);
 
