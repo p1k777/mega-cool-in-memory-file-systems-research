@@ -50,6 +50,22 @@ struct Metrics {
     }
 };
 
+struct ProbabilityProfile {
+    std::string name;
+
+    double op_read;
+    double op_write;
+    double op_mkdir;
+    double op_ls;
+    double op_mv;
+    double op_find;
+};
+
+struct DistributionProfile {
+    Distribution dist;
+    double locality;
+    double zipf_s;
+};
 
 enum class Distribution
 {
@@ -94,6 +110,20 @@ struct ExperimentConfig
     FileSystemType fs_type;
 };
 
+const std::vector<ProbabilityProfile> profiles {
+    {"build_system", 0.50, 0.25, 0.10, 0.05, 0.05, 0.05},
+    {"file_manager", 0.20, 0.05, 0.45, 0.10, 0.10, 0.10},
+    {"backup", 0.1, 0.7, 0.0, 0.0, 0.2, 0.0,},
+    {"refactoring", 0.1, 0.1, 0.1, 0.1, 0.5, 0.1,},
+    {"database", 0.55, 0.45, 0.00, 0.00, 0.00, 0.00},
+    {"web_server", 0.8, 0.1, 0.0, 0.1, 0.0, 0.0}
+};
+
+const std::vector<DistributionProfile> d_profiles {
+    {Distribution::Uniform, 0.0, 0.0},
+    {Distribution::Zipf, 0.3, 1.5},
+    {Distribution::Zipf, 0.8, 2.0}
+};
 
 
 class Benchmark {
@@ -107,7 +137,7 @@ public:
     Metrics OverallRun(filesystem::IFileSystem& fs, const ExperimentConfig& cfg);
     Metrics SingleRun(filesystem::IFileSystem& fs, fsgenerator::GeneratedFs&, const ExperimentConfig& cfg, const std::vector <Operation> &);
   
-    void WriteMetrics(const Metrics&, const ExperimentConfig&, const std::string&);
+    void GenerateDataset(filesystem::IFileSystem& fs);
 
 private:
 

@@ -176,35 +176,102 @@ double Benchmark::ThroughputCalc(size_t op_num, double total_time)
     return (op_num / time_sec);
 }
 
-void Benchmark::WriteMetrics(const Metrics& metrics,  const ExperimentConfig& cfg, const std::string& path) 
+void Benchmark::GenerateDataset(filesystem::IFileSystem& fs)
 {
-    std::ofstream file(path + "/metrics.txt");
+    rnd::Random random;
+    std::ofstream csv("metrics.csv");
 
-    // Параметры дерева
-    file << "depth " << cfg.depth << '\n';
-    file << "width " << cfg.width << '\n';
-    file << "fill_factor " << cfg.fill_factor << '\n';
+    csv <<
+        "D,W,F,"
+        "profile,"
+        "system_t,"
+        "dist,"
+        "zipf_s,"
+        "locality,"
+        "op_read,"
+        "op_write,"
+        "op_mkdir,"
+        "op_ls,"
+        "op_mv,"
+        "op_find,"
+        "avg_latency,"
+        "p99_latency,"
+        "throughput,"
+        "memory\n";
 
-    file << "p_read " << cfg.p_read << '\n';
-    file << "p_write " << cfg.p_write << '\n';
-    file << "p_mkdir " << cfg.p_mkdir << '\n';
-    file << "p_ls " << cfg.p_ls << '\n';
-    file << "p_mv " << cfg.p_mv << '\n';
-    file << "p_find " << cfg.p_find << '\n';
-    
-    file << "distribution ";
-    if (cfg.distribution == Distribution::Zipf)
-        file << "zipf " << cfg.zipf_p;
-    else 
-        file << "uniform";
-    file << '\n';
-    
-    // Результат работы
-    file << "avg_latency_us " << metrics.avg_latency_us << '\n';    
-    file << "p99_latency_us " << metrics.p99_latency_us << '\n';    
-    file << "throughput_ops_sec " << metrics.throughput_ops_sec << '\n';    
-    file << "memory_usage_bytes " << metrics.memory_usage_bytes << '\n';
+    for (int i = 0; i < 500; i++) {
+        // filesystem type
+        for (int s = 0; s < 3; s++) {
+
+        // distribution profiles
+        for (int k = 0; k < 3; k++) {
+
+        // probability profiles
+        for (int j = 0; j < 6; j++) {
+            ExperimentConfig cfg;
+
+            cfg.depth = random.integer(3, 10);
+            cfg.width = random.integer(2, 100);
+            cfg.fill_factor = std::min(random.real() + 0.3, 0.99);
+            cfg.operations = 10000;
+
+            cfg.p_read  = profiles[j].op_read;
+            cfg.p_write = profiles[j].op_write;
+            cfg.p_mkdir = profiles[j].op_mkdir;
+            cfg.p_ls    = profiles[j].op_ls;
+            cfg.p_mv    = profiles[j].op_mv;
+            cfg.p_find  = profiles[j].op_find;
+
+            cfg.distribution = d_profiles[k].dist;
+            cfg.locality = d_profiles[k].locality;
+            cfg.zipf_p = d_profiles[k].zipf_s;
+
+            if (s == 0)
+                cfg.fs_type = FileSystemType::A;
+            else if (s == 1)
+                cfg.fs_type = FileSystemType::B;
+            else 
+                cfg.fs_type = FileSystemType::C;
+
+            Metrics m = OverallRun(fs, cfg);
+
+
+            csv
+                << cfg.depth << ','
+                << cfg.width << ','
+                << cfg.fill_factor << ','
+
+                << profiles[j].name << ','
+
+                << char('A' + s) << ','
+
+                << (cfg.distribution == Distribution::Uniform
+                        ? "uniform"
+                        : "zipf")
+                << ','
+
+                << cfg.zipf_p << ','
+                << cfg.locality << ','
+
+                << cfg.p_read << ','
+                << cfg.p_write << ','
+                << cfg.p_mkdir << ','
+                << cfg.p_ls << ','
+                << cfg.p_mv << ','
+                << cfg.p_find << ','
+
+                << m.avg_latency_us << ','
+                << m.p99_latency_us << ','
+                << m.throughput_ops_sec << ','
+                << m.memory_usage_bytes
+
+                << '\n';
+        }
+        
+        }
+
+        }
+    }
 }
-
 
 }; // namespace benchmark
