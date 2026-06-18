@@ -225,7 +225,7 @@ int main(int argc, char** argv) {
         Benchmark benchmark;
 
         for (int depth : {2, 5, 10, 15, 20}) {
-            for (int width : {10, 30, 100, 300, 1000}) {
+            for (int width : {10, 30, 100, 300}) {
                 for (double fill_factor : {0.3, 0.6, 0.95}) {
                     for (const auto& profile : benchmark::profiles) {
                         for (const auto& distribution_profile : benchmark::d_profiles) {
@@ -244,6 +244,7 @@ int main(int argc, char** argv) {
                             const Metrics metrics = benchmark.OverallRun(*fs, cfg);
 
                             WriteCsvRow(output, cfg, profile.name, metrics);
+                            std::cout << "[BM RUN] Suit Profile=" << profile.name << " D=" << depth << " W=" << width << " F=" << fill_factor << " finished" << '\n';
                         }
                     }
                 }
