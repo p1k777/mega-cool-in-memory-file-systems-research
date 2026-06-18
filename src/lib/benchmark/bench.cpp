@@ -222,7 +222,9 @@ void Benchmark::GenerateDataset(filesystem::IFileSystem& fs)
             cfg.depth = D_profile[d_idx];
             cfg.width = W_profile[w_idx];
             cfg.fill_factor = F_profile[f_idx];
+
             cfg.operations = 100;
+            cfg.repeats = 5;
 
             cfg.p_read  = profiles[j].op_read;
             cfg.p_write = profiles[j].op_write;
