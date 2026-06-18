@@ -25,7 +25,7 @@ Metrics Benchmark::OverallRun(
     
     fsgenerator::FsGenerator fs_generator(cfg.depth, cfg.width, cfg.fill_factor);
     fsgenerator::GeneratedFs file_system = fs_generator.generate();
-    file_system.fill(fs);
+    file_system.fill(*ptr);
 
     std::vector <OperationType> op_types = generate_operations(
         cfg.operations,
@@ -178,6 +178,10 @@ double Benchmark::ThroughputCalc(size_t op_num, double total_time)
 
 void Benchmark::GenerateDataset(filesystem::IFileSystem& fs)
 {
+    int16_t D_profile[7] = {2, 3, 5, 10, 15, 20};
+    int16_t W_profile[7] = {10, 30, 50, 100, 500};
+    double F_profile[4] = {0.3, 0.6, 0.95};
+    
     rnd::Random random;
     std::ofstream csv("metrics.csv");
 
@@ -200,6 +204,11 @@ void Benchmark::GenerateDataset(filesystem::IFileSystem& fs)
         "memory\n";
 
     for (int i = 0; i < 500; i++) {
+
+        for (int d_idx = 0; d_idx < 6; ++d_idx)
+        for (int w_idx = 0; w_idx < 5; ++w_idx)
+        for (int f_idx = 0; f_idx < 3; ++f_idx)
+
         // filesystem type
         for (int s = 0; s < 3; s++) {
 
@@ -210,10 +219,10 @@ void Benchmark::GenerateDataset(filesystem::IFileSystem& fs)
         for (int j = 0; j < 6; j++) {
             ExperimentConfig cfg;
 
-            cfg.depth = random.integer(3, 10);
-            cfg.width = random.integer(2, 100);
-            cfg.fill_factor = std::min(random.real() + 0.3, 0.99);
-            cfg.operations = 10000;
+            cfg.depth = D_profile[d_idx];
+            cfg.width = W_profile[w_idx];
+            cfg.fill_factor = F_profile[f_idx];
+            cfg.operations = 100;
 
             cfg.p_read  = profiles[j].op_read;
             cfg.p_write = profiles[j].op_write;
