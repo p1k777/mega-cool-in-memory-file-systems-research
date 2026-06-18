@@ -398,7 +398,7 @@ TEST(PathGenerator, MkdirGeneratesFreshDirectoryNamesUnderExistingDirectories) {
 
 TEST(PathGenerator, MoveGeneratesSourceFileAndDestinationUnderExistingDirectory) {
     auto fs = make_small_fs();
-    const auto valid_files = collect_file_paths(fs);
+    auto current_files = collect_file_paths(fs);
     const auto valid_dirs = collect_dir_paths(fs);
     UniformPathGenerator gen(fs, 0.0);
 
@@ -409,10 +409,13 @@ TEST(PathGenerator, MoveGeneratesSourceFileAndDestinationUnderExistingDirectory)
         const path_type& source = paths[i];
         const path_type& destination = paths[i + 1];
 
-        EXPECT_TRUE(contains(valid_files, source)) << source;
+        EXPECT_TRUE(contains(current_files, source)) << source;
         EXPECT_TRUE(is_valid_absolute_path(destination)) << destination;
         EXPECT_TRUE(contains(valid_dirs, parent_path(destination))) << destination;
         EXPECT_TRUE(ends_with(filename(destination), "_new")) << destination;
+
+        current_files.erase(source);
+        current_files.insert(destination);
     }
 }
 
@@ -476,7 +479,7 @@ TEST(PathGenerator, ZipfLsGeneratesExistingDirectoryPaths) {
     }
 }
 
-TEST(PathGenerator, ZipfFindGeneratesPatternsInsideExistingDirectories) {
+TEST(PathGenerator, ZipfFindGeneratesExistingDirectoryPaths) {
     auto fs = make_small_fs();
     const auto valid_dirs = collect_dir_paths(fs);
     ZipfPathGenerator gen(fs, 1.5, 0.0);
@@ -484,17 +487,15 @@ TEST(PathGenerator, ZipfFindGeneratesPatternsInsideExistingDirectories) {
     const auto paths = generate_many(gen, OperationType::Find, 1000);
 
     ASSERT_EQ(paths.size(), 1000u);
-    for (const auto& pattern : paths) {
-        ASSERT_TRUE(ends_with(pattern, "/*")) << pattern;
-
-        const path_type dir = pattern.substr(0, pattern.size() - 2);
-        EXPECT_TRUE(contains(valid_dirs, dir)) << pattern;
+    for (const auto& path : paths) {
+        EXPECT_TRUE(is_valid_absolute_path(path)) << path;
+        EXPECT_TRUE(contains(valid_dirs, path)) << path;
     }
 }
 
 TEST(PathGenerator, ZipfMoveGeneratesSourceFileAndDestinationUnderExistingDirectory) {
     auto fs = make_small_fs();
-    const auto valid_files = collect_file_paths(fs);
+    auto current_files = collect_file_paths(fs);
     const auto valid_dirs = collect_dir_paths(fs);
     ZipfPathGenerator gen(fs, 1.5, 0.2);
 
@@ -505,9 +506,12 @@ TEST(PathGenerator, ZipfMoveGeneratesSourceFileAndDestinationUnderExistingDirect
         const path_type& source = paths[i];
         const path_type& destination = paths[i + 1];
 
-        EXPECT_TRUE(contains(valid_files, source)) << source;
+        EXPECT_TRUE(contains(current_files, source)) << source;
         EXPECT_TRUE(contains(valid_dirs, parent_path(destination))) << destination;
         EXPECT_TRUE(ends_with(filename(destination), "_new")) << destination;
+
+        current_files.erase(source);
+        current_files.insert(destination);
     }
 }
 
@@ -523,4 +527,3 @@ TEST(PathGenerator, ZipfHighLocalityStillGeneratesOnlyValidPaths) {
         EXPECT_TRUE(contains(valid_files, path)) << path;
     }
 }
-

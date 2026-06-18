@@ -1,5 +1,3 @@
-#pragma once
-
 #include "bench.hpp"
 
 namespace benchmark {
