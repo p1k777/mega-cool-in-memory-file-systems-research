@@ -35,16 +35,16 @@ struct ProbabilityProfile {
     double op_find;
 };
 
-struct DistributionProfile {
-    Distribution dist;
-    double locality;
-    double zipf_s;
-};
-
 enum class Distribution
 {
     Uniform,
     Zipf
+};
+
+struct DistributionProfile {
+    Distribution dist;
+    double locality;
+    double zipf_s;
 };
 
 enum class FileSystemType 
@@ -82,18 +82,18 @@ struct ExperimentConfig
 };
 
 const std::vector<ProbabilityProfile> profiles {
-    {"build_system", 0.50, 0.25, 0.10, 0.05, 0.05, 0.05},
-    {"file_manager", 0.20, 0.05, 0.45, 0.10, 0.10, 0.10},
-    {"backup", 0.1, 0.7, 0.0, 0.0, 0.2, 0.0,},
-    {"refactoring", 0.1, 0.1, 0.1, 0.1, 0.5, 0.1,},
-    {"database", 0.55, 0.45, 0.00, 0.00, 0.00, 0.00},
-    {"web_server", 0.8, 0.1, 0.0, 0.1, 0.0, 0.0}
+    ProbabilityProfile{"build_system", 0.50, 0.25, 0.10, 0.05, 0.05, 0.05},
+    ProbabilityProfile{"file_manager", 0.20, 0.05, 0.45, 0.10, 0.10, 0.10},
+    ProbabilityProfile{"backup", 0.1, 0.7, 0.0, 0.0, 0.2, 0.0,},
+    ProbabilityProfile{"refactoring", 0.1, 0.1, 0.1, 0.1, 0.5, 0.1,},
+    ProbabilityProfile{"database", 0.55, 0.45, 0.00, 0.00, 0.00, 0.00},
+    ProbabilityProfile{"web_server", 0.8, 0.1, 0.0, 0.1, 0.0, 0.0}
 };
 
 const std::vector<DistributionProfile> d_profiles {
-    {Distribution::Uniform, 0.0, 0.0},
-    {Distribution::Zipf, 0.3, 1.5},
-    {Distribution::Zipf, 0.8, 2.0}
+    DistributionProfile{Distribution::Uniform, 0.0, 0.0},
+    DistributionProfile{Distribution::Zipf, 0.3, 1.5},
+    DistributionProfile{Distribution::Zipf, 0.8, 2.0}
 };
 
 

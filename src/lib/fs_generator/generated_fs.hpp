@@ -26,7 +26,7 @@ namespace fsgenerator {
 
 
         fs_ -- хранит файловую систему в удобном формате (облегченную)
-        dirs_, files_ -- индексы внутри tree_, директории и файлы соответственно
+        dirs_, files_ -- индексы внутри fs_, директории и файлы соответственно
 
         остальное -- просто служебные методы
 
@@ -62,6 +62,7 @@ namespace fsgenerator {
         const std::vector<size_t>& get_files() const;
         const std::vector<size_t>& get_dirs() const;
         const tree_node_type& get_node(size_t idx) const;
+        const tree_node_type& get_tree_node_for_fs_index(size_t idx) const;
 
     private:
 
@@ -74,6 +75,7 @@ namespace fsgenerator {
         std::vector<FsNode> fs_;
         std::vector<size_t> dirs_;
         std::vector<size_t> files_;
+        std::vector<size_t> fs_to_tree_;
     };
 
 };  // namespace fsgenerator

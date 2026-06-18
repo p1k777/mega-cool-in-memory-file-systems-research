@@ -10,7 +10,11 @@
 
 class FakeFileSystem : public filesystem::IFileSystem {
 public:
-    FakeFileSystem() : cur_depth_(0), cur_width_(0), files_count_(0) {}
+    FakeFileSystem() : cur_depth_(0), cur_width_(0), files_count_(0) {
+        get_idx_["/"] = 0;
+        tree_.push_back({});
+        depths_["/"] = 0;
+    }
 
     bytes_type op_read(const path_type&) const override { return {}; }
     units_list_type op_ls(const path_type&) const override { return {}; }
@@ -98,9 +102,7 @@ private:
 
 TEST(FakeFileSystemTest, CalcDepth) {
     FakeFileSystem fs;
-    
-    fs.op_mkdir("/"); 
-    
+
     fs.op_mkdir("/folder");
     fs.op_mkdir("/folder/subfolder");
     fs.op_write("/folder/subfolder/f.txt", {});
@@ -110,7 +112,6 @@ TEST(FakeFileSystemTest, CalcDepth) {
 
 TEST(FakeFileSystemTest, CalcWidth) {
     FakeFileSystem fs;
-    fs.op_mkdir("/");
     fs.op_mkdir("/parent");
     
     fs.op_mkdir("/parent/dir1");
@@ -125,8 +126,7 @@ TEST(FakeFileSystemTest, CalcWidth) {
 
 TEST(FakeFileSystemTest, MissingParentDir) {
     FakeFileSystem fs;
-    fs.op_mkdir("/");
-    
+
     EXPECT_THROW({
         fs.op_write("/missing_dir/file.txt", {});
     }, std::runtime_error);

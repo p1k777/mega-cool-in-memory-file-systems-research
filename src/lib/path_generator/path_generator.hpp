@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <string>
 #include <vector>
 
 #include "../common.hpp"
@@ -39,6 +40,9 @@ namespace pathgen {
         rnd::Random rnd_;
 
         size_t cnt_;
+        size_t move_cnt_;
+
+        std::vector<path_type> current_paths_;
     };
 
 
@@ -73,4 +77,3 @@ namespace pathgen {
     };
 
 } // namespace pathgen
-

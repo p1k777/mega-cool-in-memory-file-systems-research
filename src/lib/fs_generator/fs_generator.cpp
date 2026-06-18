@@ -72,14 +72,14 @@ namespace fsgenerator {
         }
 
 
-        size_t max_width_idx = 0;
-        for (size_t i = 1; i < tree_.size(); i++) {
-            max_width_idx = tree_[i].children > tree_[max_width_idx].children ? i : max_width_idx;
-        }
+        // size_t max_width_idx = 0;
+        // for (size_t i = 1; i < tree_.size(); i++) {
+        //     max_width_idx = tree_[i].children > tree_[max_width_idx].children ? i : max_width_idx;
+        // }
 
-        while (tree_[max_width_idx].children < target_width_) {
-            add_node_(max_width_idx, rnd);
-        }
+        // while (tree_[max_width_idx].children < target_width_) {
+        //     add_node_(max_width_idx, rnd);
+        // }
 
         return GeneratedFs(tree_);
     }
