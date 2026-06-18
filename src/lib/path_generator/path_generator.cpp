@@ -75,7 +75,7 @@ namespace pathgen {
                 }
 
                 case OperationType::Find:
-                    result.push_back(gen_pattern_());
+                    result.push_back(generated_fs_.get_path(gen_dir_()));
                     break;
             }
         }
@@ -110,9 +110,6 @@ namespace pathgen {
 
         last_dir_ = cur;
         return cur;
-    }
-    IPathGenerator::path_type UniformPathGenerator::gen_pattern_() {
-        return generated_fs_.get_path(gen_dir_()) + "/*";
     }
 
     ZipfPathGenerator::ZipfPathGenerator(const fsgenerator::GeneratedFs& fs, double s, double loc)
@@ -166,9 +163,6 @@ namespace pathgen {
 
         last_dir_ = cur;
         return cur;
-    }
-    IPathGenerator::path_type ZipfPathGenerator::gen_pattern_() {
-        return generated_fs_.get_path(gen_dir_()) + "/*";
     }
 
 } // namespace pathgen

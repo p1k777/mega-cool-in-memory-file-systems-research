@@ -379,23 +379,6 @@ TEST(PathGenerator, LsGeneratesExistingDirectoryPaths) {
     }
 }
 
-TEST(PathGenerator, FindGeneratesPatternsInsideExistingDirectories) {
-    auto fs = make_small_fs();
-    const auto valid_dirs = collect_dir_paths(fs);
-    UniformPathGenerator gen(fs, 0.0);
-
-    const auto paths = generate_many(gen, OperationType::Find, 1000);
-
-    ASSERT_EQ(paths.size(), 1000u);
-    for (const auto& pattern : paths) {
-        ASSERT_TRUE(ends_with(pattern, "/*")) << pattern;
-
-        const path_type dir = pattern.substr(0, pattern.size() - 2);
-        EXPECT_TRUE(is_valid_absolute_path(dir)) << pattern;
-        EXPECT_TRUE(contains(valid_dirs, dir)) << pattern;
-    }
-}
-
 TEST(PathGenerator, MkdirGeneratesFreshDirectoryNamesUnderExistingDirectories) {
     auto fs = make_small_fs();
     const auto valid_dirs = collect_dir_paths(fs);

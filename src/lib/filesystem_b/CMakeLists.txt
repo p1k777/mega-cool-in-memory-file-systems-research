@@ -8,6 +8,8 @@ target_include_directories(filesystem_b
         ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
+target_compile_features(filesystem_b PUBLIC cxx_std_23)
+
 add_executable(filesystem_b_tests
     tests/filesystem_b_test.cpp
 )
