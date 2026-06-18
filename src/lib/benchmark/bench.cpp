@@ -14,18 +14,17 @@ Metrics Benchmark::OverallRun(
         const ExperimentConfig &cfg)
 {
     
-    filesystem::IFileSystem *ptr;
+    std::unique_ptr<filesystem::IFileSystem> ptr;
     if (cfg.fs_type == FileSystemType::A) {
-        ptr = new filesystem::TreeFileSystem;
+        ptr = std::make_unique<filesystem::TreeFileSystem>();
     } else if (cfg.fs_type == FileSystemType::B) {
-        ptr = new filesystem::FileSystemB;
+        ptr = std::make_unique<filesystem::FileSystemB>();
     } else {
-        ptr = new filesystem::FlatHashFileSystem;
+        ptr = std::make_unique<filesystem::FlatHashFileSystem>();
     }
     
     fsgenerator::FsGenerator fs_generator(cfg.depth, cfg.width, cfg.fill_factor);
     fsgenerator::GeneratedFs file_system = fs_generator.generate();
-    file_system.fill(*ptr);
 
     std::vector <OperationType> op_types = generate_operations(
         cfg.operations,
@@ -69,7 +68,7 @@ Metrics Benchmark::OverallRun(
 
     Metrics avg_result;
     for (int i = 0; i < cfg.repeats; ++i) {
-        avg_result += SingleRun(*ptr, file_system, cfg, ops);
+        avg_result += SingleRun(file_system, cfg, ops);
     }
     avg_result /= cfg.repeats;
 
@@ -77,15 +76,21 @@ Metrics Benchmark::OverallRun(
 }
 
 Metrics Benchmark::SingleRun(
-        filesystem::IFileSystem &fs,
-        fsgenerator::GeneratedFs &generator,
+        fsgenerator::GeneratedFs file_system,
         const ExperimentConfig &cfg,
         const std::vector <Operation> &operations)
 {
+    std::unique_ptr<filesystem::IFileSystem> ptr;
+    if (cfg.fs_type == FileSystemType::A) {
+        ptr = std::make_unique<filesystem::TreeFileSystem>();
+    } else if (cfg.fs_type == FileSystemType::B) {
+        ptr = std::make_unique<filesystem::FileSystemB>();
+    } else {
+        ptr = std::make_unique<filesystem::FlatHashFileSystem>();
+    }
 
-    generator.fill(fs);
+    file_system.fill(*ptr);
     Metrics result;
-
 
     std::vector <double> latencies;
     double total_time = 0.0;
@@ -93,7 +98,7 @@ Metrics Benchmark::SingleRun(
     for (int i = 0; i < cfg.operations; ++i) {
         auto opBegin = Now();
 
-        executeOperation(fs, operations[i]);
+        executeOperation(*ptr, operations[i]);
 
         auto opEnd = Now();
         double opTime = std::chrono::duration<double, std::micro> (opEnd - opBegin).count();
@@ -105,7 +110,7 @@ Metrics Benchmark::SingleRun(
     result.avg_latency_us = AvgLatency(latencies);
     result.p99_latency_us = P99Calc(latencies);
     result.throughput_ops_sec = ThroughputCalc(cfg.operations, total_time);
-    result.memory_usage_bytes = fs.get_memory_usage();
+    result.memory_usage_bytes = ptr->get_memory_usage();
 
     return result;
 }
@@ -167,7 +172,7 @@ double Benchmark::P99Calc(const std::vector<double> &v)
     std::vector<double> tmp = v;
     std::sort(tmp.begin(), tmp.end());
     size_t idx = static_cast<size_t>(0.99 * v.size());
-    return v[idx];
+    return tmp[idx];
 }
 
 double Benchmark::ThroughputCalc(size_t op_num, double total_time)
@@ -203,11 +208,9 @@ void Benchmark::GenerateDataset(filesystem::IFileSystem& fs)
         "throughput,"
         "memory\n";
 
-    for (int i = 0; i < 500; i++) {
-
-        for (int d_idx = 0; d_idx < 6; ++d_idx)
-        for (int w_idx = 0; w_idx < 5; ++w_idx)
-        for (int f_idx = 0; f_idx < 3; ++f_idx)
+    for (int d_idx = 0; d_idx < 6; ++d_idx)
+    for (int w_idx = 0; w_idx < 5; ++w_idx)
+    for (int f_idx = 0; f_idx < 3; ++f_idx)
 
         // filesystem type
         for (int s = 0; s < 3; s++) {
@@ -282,7 +285,6 @@ void Benchmark::GenerateDataset(filesystem::IFileSystem& fs)
         }
 
         }
-    }
 }
 
 }; // namespace benchmark

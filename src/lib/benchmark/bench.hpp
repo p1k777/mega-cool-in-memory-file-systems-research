@@ -109,7 +109,7 @@ public:
 
 
     Metrics OverallRun(filesystem::IFileSystem& fs, const ExperimentConfig& cfg);
-    Metrics SingleRun(filesystem::IFileSystem& fs, fsgenerator::GeneratedFs&, const ExperimentConfig& cfg, const std::vector <Operation> &);
+    Metrics SingleRun(fsgenerator::GeneratedFs, const ExperimentConfig&, const std::vector <Operation> &);
   
     void GenerateDataset(filesystem::IFileSystem& fs);
 
