@@ -112,7 +112,7 @@ namespace pathgen {
         return cur;
     }
     IPathGenerator::path_type UniformPathGenerator::gen_pattern_() {
-        return generated_fs_.get_path(gen_dir_()) + "/*";
+        return join_path(generated_fs_.get_path(gen_dir_()), "*");
     }
 
     ZipfPathGenerator::ZipfPathGenerator(const fsgenerator::GeneratedFs& fs, double s, double loc)
@@ -168,7 +168,7 @@ namespace pathgen {
         return cur;
     }
     IPathGenerator::path_type ZipfPathGenerator::gen_pattern_() {
-        return generated_fs_.get_path(gen_dir_()) + "/*";
+        return join_path(generated_fs_.get_path(gen_dir_()), "*");
     }
 
 } // namespace pathgen
