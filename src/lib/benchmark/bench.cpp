@@ -13,33 +13,11 @@ Metrics Benchmark::OverallRun(
         filesystem::IFileSystem &fs, 
         const ExperimentConfig &cfg)
 {
-
-    fsgenerator::FsGenerator fs(cfg.depth,
-                                cfg.width,
-                                cfg.fill_factor);
     
-
-    Metrics avg_result;
-    for (int i = 0; i < cfg.repeats; ++i) {
-        avg_result += SingleRun(fs, cfg);
-    }
-    avg_result /= cfg.repeats;
-
-    return avg_result;
-}
-
-Metrics Benchmark::SingleRun(
-        filesystem::IFileSystem &fs, 
-        const ExperimentConfig &cfg)
-{
-    // FsGenerator(size_t D, size_t W, double F, double file_p=0.5, size_t max_nodes_count=1e7);
-    // ну и тут кароче строим дерево файловой системы то сё
     fsgenerator::FsGenerator fs_generator(cfg.depth, cfg.width, cfg.fill_factor);
     fsgenerator::GeneratedFs file_system = fs_generator.generate();
+    file_system.fill(fs);
 
-
-    Metrics result;
-    
     std::vector <OperationType> op_types = generate_operations(
         cfg.operations,
         cfg.p_read,
@@ -50,21 +28,54 @@ Metrics Benchmark::SingleRun(
         cfg.p_find
     );
 
-    pathgen::UniformPathGenerator uni_path_gen(file_system, cfg.locality);
-    std::vector <filesystem::IFileSystem::path_type> uni_paths = uni_path_gen.generate(op_types);
-    std::vector <filesystem::IFileSystem::path_type> uni_paths_2 = uni_path_gen.generate(op_types);
-
-
-    std::vector <Operation> operations;
-    for (int i = 0; i < cfg.operations; ++i) {
-        Operation tmp = Operation{
-            .type = op_types[i],
-            .path = uni_paths[i],
-            .second_path = uni_paths_2[i]
-        };
-
-        operations.push_back(tmp);
+    std::vector <filesystem::IFileSystem::path_type> paths;
+    pathgen::IPathGenerator* path_gen = nullptr;
+    if (cfg.distribution == benchmark::Distribution::Uniform) {
+        pathgen::UniformPathGenerator uni_path_gen(file_system, cfg.locality);
+        paths = uni_path_gen.generate(op_types);
+        path_gen = &uni_path_gen;
+    } else {
+        pathgen::ZipfPathGenerator zpath_gen(file_system, cfg.zipf_p, cfg.locality);
+        paths = zpath_gen.generate(op_types);
+        path_gen = &zpath_gen;
     }
+
+    int p_idx = 0;
+    std::vector <Operation> ops;
+    for (int i = 0; i < cfg.operations; ++i) {
+        Operation operation;
+        operation.type = op_types[i];
+        operation.path = paths[p_idx];
+        p_idx++;
+
+        if (op_types[i] == OperationType::Move) {
+            operation.second_path = paths[p_idx];
+            p_idx++;
+        } else if (op_types[i] == OperationType::Find) {
+            swap(operation.pattern, operation.path);
+        }
+
+        ops.push_back(operation);
+    }
+
+    Metrics avg_result;
+    for (int i = 0; i < cfg.repeats; ++i) {
+        avg_result += SingleRun(fs, cfg, ops);
+    }
+    avg_result /= cfg.repeats;
+
+    return avg_result;
+}
+
+Metrics Benchmark::SingleRun(
+        filesystem::IFileSystem &fs, 
+        const ExperimentConfig &cfg,
+        const std::vector <Operation> &operations)
+{
+    fsgenerator::FsGenerator fs_generator(cfg.depth, cfg.width, cfg.fill_factor);
+    fsgenerator::GeneratedFs file_system = fs_generator.generate();
+
+    Metrics result;
 
 
     std::vector <double> latencies;

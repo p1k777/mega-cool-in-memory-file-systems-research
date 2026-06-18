@@ -17,7 +17,7 @@ struct Operation {
 
     std::string path;
     std::string second_path;
-    std::string pattern = "*"; // для поиска 
+    std::string pattern; // для поиска 
 };
 
 
@@ -50,8 +50,7 @@ struct Metrics {
 enum class Distribution
 {
     Uniform,
-    Zipf15,
-    Zipf20
+    Zipf
 };
 
 struct ExperimentConfig
@@ -75,6 +74,7 @@ struct ExperimentConfig
 
     Distribution distribution;
     double locality;
+    double zipf_p;
 
     // параметры эксперимента
 
@@ -93,7 +93,7 @@ public:
 
 
     Metrics OverallRun(filesystem::IFileSystem& fs, const ExperimentConfig& cfg);
-    Metrics SingleRun(filesystem::IFileSystem& fs, const ExperimentConfig& cfg);
+    Metrics SingleRun(filesystem::IFileSystem& fs, const ExperimentConfig& cfg, const std::vector <Operation> &);
     
 private:
 
