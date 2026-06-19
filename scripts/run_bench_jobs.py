@@ -21,6 +21,9 @@ PROFILE_ALIASES = {
     "fm": "file_manager",
     "backup": "backup",
     "bu": "backup",
+    "reshaping": "reshaping",
+    "reshape": "reshaping",
+    "rs": "reshaping",
     "refactoring": "refactoring",
     "ref": "refactoring",
     "database": "database",
@@ -62,7 +65,8 @@ def parse_args() -> argparse.Namespace:
         default=["build", "file", "db", "web"],
         help=(
             "Profiles to run. Supported aliases: "
-            "build/bs, file/fm, backup/bu, refactoring/ref, db, web/ws."
+            "build/bs, file/fm, backup/bu, reshaping/reshape/rs, "
+            "refactoring/ref, db, web/ws."
         ),
     )
     parser.add_argument(

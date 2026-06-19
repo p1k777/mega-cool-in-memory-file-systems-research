@@ -47,6 +47,11 @@ struct DistributionProfile {
     double zipf_s;
 };
 
+struct ShapeProfile {
+    int D;
+    int W;
+};
+
 enum class FileSystemType 
 {
     A,
@@ -85,6 +90,7 @@ const std::vector<ProbabilityProfile> profiles {
     ProbabilityProfile{"build_system", 0.50, 0.25, 0.10, 0.05, 0.05, 0.05},
     ProbabilityProfile{"file_manager", 0.20, 0.05, 0.45, 0.10, 0.10, 0.10},
     ProbabilityProfile{"backup", 0.1, 0.7, 0.0, 0.0, 0.2, 0.0},
+    ProbabilityProfile{"reshaping", 0.05, 0.10, 0.35, 0.05, 0.40, 0.05},
     ProbabilityProfile{"refactoring", 0.1, 0.1, 0.1, 0.1, 0.5, 0.1},
     ProbabilityProfile{"database", 0.55, 0.45, 0.00, 0.00, 0.00, 0.00},
     ProbabilityProfile{"web_server", 0.8, 0.1, 0.0, 0.1, 0.0, 0.0}
@@ -94,6 +100,36 @@ const std::vector<DistributionProfile> d_profiles {
     DistributionProfile{Distribution::Uniform, 0.0, 0.0},
     DistributionProfile{Distribution::Zipf, 0.3, 1.5},
     DistributionProfile{Distribution::Zipf, 0.8, 2.0}
+};
+
+const std::vector<double> fill_factors {
+    0.3, 0.6, 0.95
+};
+
+const std::vector<ShapeProfile> regular_shape_profiles {
+    ShapeProfile{2, 5},
+    ShapeProfile{2, 10},
+    ShapeProfile{2, 15},
+    ShapeProfile{5, 5},
+    ShapeProfile{5, 10},
+    ShapeProfile{5, 15},
+    ShapeProfile{10, 5},
+    ShapeProfile{10, 10},
+    ShapeProfile{10, 15}
+};
+
+const std::vector<ShapeProfile> deep_narrow_corner_profiles {
+    ShapeProfile{10, 2},
+    ShapeProfile{15, 2},
+    ShapeProfile{20, 2},
+    ShapeProfile{15, 3}
+};
+
+const std::vector<ShapeProfile> wide_shallow_corner_profiles {
+    ShapeProfile{2, 30},
+    ShapeProfile{2, 50},
+    ShapeProfile{3, 30},
+    ShapeProfile{3, 50}
 };
 
 

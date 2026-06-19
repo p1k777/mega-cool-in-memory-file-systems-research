@@ -38,6 +38,7 @@ void PrintUsage(const char* program) {
         << "  Profile    build_system|build|bs | "
            "file_manager|file|fm | "
            "backup|bu | "
+           "reshaping|reshape|rs | "
            "refactoring|ref | "
            "database|db | "
            "web_server|web|ws\n"
@@ -109,6 +110,11 @@ const benchmark::ProbabilityProfile& ParseProfile(std::string_view value) {
             return profile;
         }
 
+        if (matches(profile.name, {"reshape", "rs"}) &&
+            profile.name == "reshaping") {
+            return profile;
+        }
+
         if (matches(profile.name, {"ref"}) &&
             profile.name == "refactoring") {
             return profile;
@@ -127,7 +133,7 @@ const benchmark::ProbabilityProfile& ParseProfile(std::string_view value) {
 
     throw std::invalid_argument(
         "Profile must be one of: build_system/build/bs, "
-        "file_manager/file/fm, backup/bu, refactoring/ref, "
+        "file_manager/file/fm, backup/bu, reshaping/reshape/rs, refactoring/ref, "
         "database/db, web_server/web/ws"
     );
 }
@@ -313,31 +319,36 @@ int main(int argc, char** argv) {
             WriteCsvHeader(output);
         }
 
-        for (int depth : {2, 5, 10}) {
-            for (int width : {5, 10, 15}) {
-                for (double fill_factor : {0.3, 0.6, 0.95}) {
-                    fsgenerator::FsGenerator fs_generator(
-                        static_cast<std::size_t>(depth),
-                        static_cast<std::size_t>(width),
-                        fill_factor
-                    );
-                    const fsgenerator::GeneratedFs file_system =
-                        fs_generator.generate();
+        auto run_shape_profiles =
+            [&](const std::vector<benchmark::ShapeProfile>& shape_profiles) {
+                for (const benchmark::ShapeProfile& shape : shape_profiles) {
+                    for (double fill_factor : benchmark::fill_factors) {
+                        fsgenerator::FsGenerator fs_generator(
+                            static_cast<std::size_t>(shape.D),
+                            static_cast<std::size_t>(shape.W),
+                            fill_factor
+                        );
+                        const fsgenerator::GeneratedFs file_system =
+                            fs_generator.generate();
 
-                    RunProfileConfigs(
-                        output,
-                        file_system,
-                        fs_type,
-                        repeats,
-                        operations,
-                        depth,
-                        width,
-                        fill_factor,
-                        profile
-                    );
+                        RunProfileConfigs(
+                            output,
+                            file_system,
+                            fs_type,
+                            repeats,
+                            operations,
+                            shape.D,
+                            shape.W,
+                            fill_factor,
+                            profile
+                        );
+                    }
                 }
-            }
-        }
+            };
+
+        run_shape_profiles(benchmark::regular_shape_profiles);
+        run_shape_profiles(benchmark::deep_narrow_corner_profiles);
+        run_shape_profiles(benchmark::wide_shallow_corner_profiles);
 
         return EXIT_SUCCESS;
     } catch (const std::exception& error) {
