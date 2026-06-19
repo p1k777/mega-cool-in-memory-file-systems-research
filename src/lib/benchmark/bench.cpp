@@ -6,21 +6,43 @@ inline auto Now() {
     return std::chrono::high_resolution_clock::now();
 }
 
+template <typename FileSystem>
+Metrics Benchmark::SingleRun(
+        const FileSystem& base_fs,
+        const ExperimentConfig& cfg,
+        const std::vector<Operation>& operations)
+{
+    FileSystem fs = base_fs;
+    Metrics result{};
+
+    std::vector<double> latencies;
+    double total_time = 0.0;
+
+    for (std::size_t op_idx = 0; op_idx < cfg.operations; ++op_idx) {
+        auto opBegin = Now();
+
+        executeOperation(fs, operations[op_idx]);
+
+        auto opEnd = Now();
+        double opTime =
+            std::chrono::duration<double, std::micro>(opEnd - opBegin).count();
+
+        latencies.push_back(opTime);
+        total_time += opTime;
+    }
+
+    result.avg_latency_us = AvgLatency(latencies);
+    result.p99_latency_us = P99Calc(latencies);
+    result.throughput_ops_sec = ThroughputCalc(cfg.operations, total_time);
+    result.memory_usage_bytes = fs.get_memory_usage();
+
+    return result;
+}
+
 
 Metrics Benchmark::OverallRun(
-        filesystem::IFileSystem &fs, 
         const ExperimentConfig &cfg)
 {
-    
-    std::unique_ptr<filesystem::IFileSystem> ptr;
-    if (cfg.fs_type == FileSystemType::A) {
-        ptr = std::make_unique<filesystem::TreeFileSystem>();
-    } else if (cfg.fs_type == FileSystemType::B) {
-        ptr = std::make_unique<filesystem::FileSystemB>();
-    } else {
-        ptr = std::make_unique<filesystem::FlatHashFileSystem>();
-    }
-    
     fsgenerator::FsGenerator fs_generator(cfg.depth, cfg.width, cfg.fill_factor);
     fsgenerator::GeneratedFs file_system = fs_generator.generate();
 
@@ -35,15 +57,12 @@ Metrics Benchmark::OverallRun(
     );
 
     std::vector <filesystem::IFileSystem::path_type> paths;
-    pathgen::IPathGenerator* path_gen = nullptr;
     if (cfg.distribution == benchmark::Distribution::Uniform) {
         pathgen::UniformPathGenerator uni_path_gen(file_system, cfg.locality);
         paths = uni_path_gen.generate(op_types);
-        path_gen = &uni_path_gen;
     } else {
         pathgen::ZipfPathGenerator zpath_gen(file_system, cfg.zipf_p, cfg.locality);
         paths = zpath_gen.generate(op_types);
-        path_gen = &zpath_gen;
     }
 
     int p_idx = 0;
@@ -62,53 +81,43 @@ Metrics Benchmark::OverallRun(
         ops.push_back(operation);
     }
 
-    Metrics avg_result;
-    for (int i = 0; i < cfg.repeats; ++i) {
-        avg_result += SingleRun(file_system, cfg, ops);
-    }
-    avg_result /= cfg.repeats;
+    switch (cfg.fs_type) {
+        case FileSystemType::A: {
+            filesystem::TreeFileSystem base_fs;
+            file_system.fill(base_fs);
 
-    return avg_result;
-}
+            Metrics avg_result{};
+            for (std::size_t repeat = 0; repeat < cfg.repeats; ++repeat) {
+                avg_result += SingleRun(base_fs, cfg, ops);
+            }
+            avg_result /= static_cast<int>(cfg.repeats);
+            return avg_result;
+        }
+        case FileSystemType::B: {
+            filesystem::FileSystemB base_fs;
+            file_system.fill(base_fs);
 
-Metrics Benchmark::SingleRun(
-        fsgenerator::GeneratedFs &file_system,
-        const ExperimentConfig &cfg,
-        const std::vector <Operation> &operations)
-{
-    std::unique_ptr<filesystem::IFileSystem> ptr;
-    if (cfg.fs_type == FileSystemType::A) {
-        ptr = std::make_unique<filesystem::TreeFileSystem>();
-    } else if (cfg.fs_type == FileSystemType::B) {
-        ptr = std::make_unique<filesystem::FileSystemB>();
-    } else {
-        ptr = std::make_unique<filesystem::FlatHashFileSystem>();
-    }
+            Metrics avg_result{};
+            for (std::size_t repeat = 0; repeat < cfg.repeats; ++repeat) {
+                avg_result += SingleRun(base_fs, cfg, ops);
+            }
+            avg_result /= static_cast<int>(cfg.repeats);
+            return avg_result;
+        }
+        case FileSystemType::C: {
+            filesystem::FlatHashFileSystem base_fs;
+            file_system.fill(base_fs);
 
-    file_system.fill(*ptr);
-    Metrics result;
-
-    std::vector <double> latencies;
-    double total_time = 0.0;
-
-    for (int i = 0; i < cfg.operations; ++i) {
-        auto opBegin = Now();
-
-        executeOperation(*ptr, operations[i]);
-
-        auto opEnd = Now();
-        double opTime = std::chrono::duration<double, std::micro> (opEnd - opBegin).count();
-        
-        latencies.push_back(opTime);
-        total_time += opTime;
+            Metrics avg_result{};
+            for (std::size_t repeat = 0; repeat < cfg.repeats; ++repeat) {
+                avg_result += SingleRun(base_fs, cfg, ops);
+            }
+            avg_result /= static_cast<int>(cfg.repeats);
+            return avg_result;
+        }
     }
 
-    result.avg_latency_us = AvgLatency(latencies);
-    result.p99_latency_us = P99Calc(latencies);
-    result.throughput_ops_sec = ThroughputCalc(cfg.operations, total_time);
-    result.memory_usage_bytes = ptr->get_memory_usage();
-
-    return result;
+    throw std::invalid_argument("unknown filesystem type");
 }
 
 
@@ -243,7 +252,7 @@ void Benchmark::GenerateDataset(filesystem::IFileSystem& fs)
             else 
                 cfg.fs_type = FileSystemType::C;
 
-            Metrics m = OverallRun(fs, cfg);
+            Metrics m = OverallRun(cfg);
 
 
             csv

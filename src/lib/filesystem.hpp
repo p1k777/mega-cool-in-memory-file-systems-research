@@ -32,5 +32,3 @@ namespace filesystem {
     };
 
 } // namespace filesystem
-
-
