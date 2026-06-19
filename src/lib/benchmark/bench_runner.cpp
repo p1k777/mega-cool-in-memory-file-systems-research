@@ -274,9 +274,9 @@ int main(int argc, char** argv) {
             * benchmark::d_profiles.size()
         );
 
-        for (int depth : {2, 10, 20}) {
-            for (int width : {10, 50, 300}) {
-                for (double fill_factor : {0.3, 0.95}) {
+        for (int depth : {2, 5, 10}) {
+            for (int width : {10, 30, 50}) {
+                for (double fill_factor : {0.3, 0.6, 0.9}) {
                     // std::vector<std::thread> threads;
                     // threads.reserve(benchmark::profiles.size());
                     std::vector<std::vector<CsvRow>> profile_rows(

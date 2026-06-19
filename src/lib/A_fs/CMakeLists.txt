@@ -10,13 +10,6 @@ target_include_directories(filesystem_a
         ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
-target_compile_options(filesystem_a
-    PRIVATE
-        -Wall
-        -Wextra
-        -Wpedantic
-)
-
 if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()
