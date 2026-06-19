@@ -43,7 +43,7 @@ Metrics Benchmark::SingleRun(
 Metrics Benchmark::OverallRun(
         const ExperimentConfig &cfg)
 {
-    fsgenerator::FsGenerator fs_generator(cfg.depth, cfg.width, cfg.fill_factor);
+    fsgenerator::FsGenerator fs_generator(cfg.D, cfg.W, cfg.F);
     fsgenerator::GeneratedFs file_system = fs_generator.generate();
     return OverallRun(file_system, cfg);
 }
@@ -249,9 +249,9 @@ void Benchmark::GenerateDataset(filesystem::IFileSystem& fs)
         for (int j = 0; j < 6; j++) {
             ExperimentConfig cfg;
 
-            cfg.depth = D_profile[d_idx];
-            cfg.width = W_profile[w_idx];
-            cfg.fill_factor = F_profile[f_idx];
+            cfg.D = D_profile[d_idx];
+            cfg.W = W_profile[w_idx];
+            cfg.F = F_profile[f_idx];
 
             cfg.operations = 100;
             cfg.repeats = 5;
@@ -278,9 +278,9 @@ void Benchmark::GenerateDataset(filesystem::IFileSystem& fs)
 
 
             csv
-                << cfg.depth << ','
-                << cfg.width << ','
-                << cfg.fill_factor << ','
+                << cfg.D << ','
+                << cfg.W << ','
+                << cfg.F << ','
 
                 << profiles[j].name << ','
 
