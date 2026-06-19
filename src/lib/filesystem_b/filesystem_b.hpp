@@ -80,7 +80,8 @@ private:
 
     path_type build_path(const Node* node) const;
 
-    void find_dfs(const Node* node, const path_type& pattern, units_list_type& result) const;
+    void find_dfs(const Node* node, const path_type& pattern, 
+                        path_type& current_path, units_list_type& result) const;
 
     static bool is_inside(const path_type& from, const path_type& to);
 

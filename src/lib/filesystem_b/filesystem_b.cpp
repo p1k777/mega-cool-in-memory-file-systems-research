@@ -261,7 +261,9 @@ IFileSystem::units_list_type FileSystemB::op_find(const path_type& path, const p
     }
 
     units_list_type result;
-    find_dfs(node, pattern, result);
+    path_type current_path = path;
+
+    find_dfs(node, pattern, current_path, result);
 
     return result;
 }
@@ -325,15 +327,24 @@ IFileSystem::path_type FileSystemB::build_path(const Node* node) const {
     return result.empty() ? "/" : result;
 }
 
-void FileSystemB::find_dfs(const Node* node, const path_type& pattern, units_list_type& result) const {
-    path_type current_path = build_path(node);
-
+void FileSystemB::find_dfs(const Node* node, const path_type& pattern,
+                                path_type& current_path, units_list_type& result) const {
     if(node != root_.get() && matches_mask(node->name, pattern)) {
         result.push_back(current_path);
     }
 
     for(const auto& child : node->children) {
-        find_dfs(child.get(), pattern, result);
+        size_t old_size = current_path.size();
+
+        if(current_path.back() != '/') {
+            current_path.push_back('/');
+        }
+
+        current_path.append(child->name.data(), child->name.size());
+
+        find_dfs(child.get(), pattern, current_path, result);
+
+        current_path.resize(old_size);
     }
 }
 
