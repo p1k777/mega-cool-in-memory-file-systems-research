@@ -56,7 +56,7 @@ namespace fsgenerator {
         ~GeneratedFs() = default;
 
 
-        void fill(filesystem::IFileSystem&);
+        void fill(filesystem::IFileSystem&) const;
 
         const path_type& get_path(size_t idx) const;
         const std::vector<size_t>& get_files() const;
