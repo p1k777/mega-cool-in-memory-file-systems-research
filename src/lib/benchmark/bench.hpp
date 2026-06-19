@@ -56,10 +56,10 @@ enum class FileSystemType
 
 struct ExperimentConfig
 {
-    int depth = 0;
-    int width = 0;
+    int D = 0;
+    int W = 0;
 
-    double fill_factor = 0.0;
+    double F = 0.0;
 
     double p_read = 0.0;
     double p_write = 0.0;
