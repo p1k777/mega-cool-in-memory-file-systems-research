@@ -1,4 +1,5 @@
 #include "bench.hpp"
+#include <iostream>
 
 namespace benchmark {
 
@@ -19,6 +20,7 @@ Metrics Benchmark::SingleRun(
     double total_time = 0.0;
 
     for (std::size_t op_idx = 0; op_idx < cfg.operations; ++op_idx) {
+        // std::cout << op_idx << " ";
         auto opBegin = Now();
 
         executeOperation(fs, operations[op_idx]);
@@ -41,20 +43,10 @@ Metrics Benchmark::SingleRun(
 
 
 Metrics Benchmark::OverallRun(
-        const ExperimentConfig &cfg)
+        const ExperimentConfig &cfg, const std::vector<OperationType>& op_types)
 {
     fsgenerator::FsGenerator fs_generator(cfg.depth, cfg.width, cfg.fill_factor);
     fsgenerator::GeneratedFs file_system = fs_generator.generate();
-
-    std::vector <OperationType> op_types = generate_operations(
-        cfg.operations,
-        cfg.p_read,
-        cfg.p_write,
-        cfg.p_mkdir,
-        cfg.p_ls,
-        cfg.p_mv,
-        cfg.p_find
-    );
 
     std::vector <filesystem::IFileSystem::path_type> paths;
     if (cfg.distribution == benchmark::Distribution::Uniform) {
@@ -174,10 +166,8 @@ double Benchmark::AvgLatency(const std::vector<double> &v)
 
 double Benchmark::P99Calc(const std::vector<double> &v)
 {
-    std::vector<double> tmp = v;
-    std::sort(tmp.begin(), tmp.end());
-    size_t idx = static_cast<size_t>(0.99 * v.size());
-    return tmp[idx];
+    auto i = std::max_element(v.begin(), v.end());
+    return *i;
 }
 
 double Benchmark::ThroughputCalc(size_t op_num, double total_time)
@@ -187,109 +177,107 @@ double Benchmark::ThroughputCalc(size_t op_num, double total_time)
 }
 
 void Benchmark::GenerateDataset(filesystem::IFileSystem& fs)
-{
-    int16_t D_profile[7] = {2, 3, 5, 10, 15, 20};
-    int16_t W_profile[7] = {10, 30, 50, 100, 500};
-    double F_profile[4] = {0.3, 0.6, 0.95};
+{ }
+    // int16_t D_profile[7] = {2, 3, 5, 10, 15, 20};
+    // int16_t W_profile[7] = {10, 30, 50, 100, 500};
+    // double F_profile[4] = {0.3, 0.6, 0.95};
     
-    rnd::Random random;
-    std::ofstream csv("metrics.csv");
+    // rnd::Random random;
+    // std::ofstream csv("metrics.csv");
 
-    csv <<
-        "D,W,F,"
-        "profile,"
-        "system_t,"
-        "dist,"
-        "zipf_s,"
-        "locality,"
-        "op_read,"
-        "op_write,"
-        "op_mkdir,"
-        "op_ls,"
-        "op_mv,"
-        "op_find,"
-        "avg_latency,"
-        "p99_latency,"
-        "throughput,"
-        "memory\n";
+    // csv <<
+    //     "D,W,F,"
+    //     "profile,"
+    //     "system_t,"
+    //     "dist,"
+    //     "zipf_s,"
+    //     "locality,"
+    //     "op_read,"
+    //     "op_write,"
+    //     "op_mkdir,"
+    //     "op_ls,"
+    //     "op_mv,"
+    //     "op_find,"
+    //     "avg_latency,"
+    //     "p99_latency,"
+    //     "throughput,"
+    //     "memory\n";
 
-    for (int d_idx = 0; d_idx < 6; ++d_idx)
-    for (int w_idx = 0; w_idx < 5; ++w_idx)
-    for (int f_idx = 0; f_idx < 3; ++f_idx)
+    // for (int d_idx = 0; d_idx < 6; ++d_idx)
+    // for (int w_idx = 0; w_idx < 5; ++w_idx)
+    // for (int f_idx = 0; f_idx < 3; ++f_idx)
 
-        // filesystem type
-        for (int s = 0; s < 3; s++) {
+    //     // filesystem type
+    //     for (int s = 0; s < 3; s++) {
 
-        // distribution profiles
-        for (int k = 0; k < 3; k++) {
+    //     // distribution profiles
+    //     for (int k = 0; k < 3; k++) {
 
-        // probability profiles
-        for (int j = 0; j < 6; j++) {
-            ExperimentConfig cfg;
+    //     // probability profiles
+    //     for (int j = 0; j < 6; j++) {
+    //         ExperimentConfig cfg;
 
-            cfg.depth = D_profile[d_idx];
-            cfg.width = W_profile[w_idx];
-            cfg.fill_factor = F_profile[f_idx];
+    //         cfg.depth = D_profile[d_idx];
+    //         cfg.width = W_profile[w_idx];
+    //         cfg.fill_factor = F_profile[f_idx];
 
-            cfg.operations = 100;
-            cfg.repeats = 5;
+    //         cfg.operations = 100;
+    //         cfg.repeats = 5;
 
-            cfg.p_read  = profiles[j].op_read;
-            cfg.p_write = profiles[j].op_write;
-            cfg.p_mkdir = profiles[j].op_mkdir;
-            cfg.p_ls    = profiles[j].op_ls;
-            cfg.p_mv    = profiles[j].op_mv;
-            cfg.p_find  = profiles[j].op_find;
+    //         cfg.p_read  = profiles[j].op_read;
+    //         cfg.p_write = profiles[j].op_write;
+    //         cfg.p_mkdir = profiles[j].op_mkdir;
+    //         cfg.p_ls    = profiles[j].op_ls;
+    //         cfg.p_mv    = profiles[j].op_mv;
+    //         cfg.p_find  = profiles[j].op_find;
 
-            cfg.distribution = d_profiles[k].dist;
-            cfg.locality = d_profiles[k].locality;
-            cfg.zipf_p = d_profiles[k].zipf_s;
+    //         cfg.distribution = d_profiles[k].dist;
+    //         cfg.locality = d_profiles[k].locality;
+    //         cfg.zipf_p = d_profiles[k].zipf_s;
 
-            if (s == 0)
-                cfg.fs_type = FileSystemType::A;
-            else if (s == 1)
-                cfg.fs_type = FileSystemType::B;
-            else 
-                cfg.fs_type = FileSystemType::C;
+    //         if (s == 0)
+    //             cfg.fs_type = FileSystemType::A;
+    //         else if (s == 1)
+    //             cfg.fs_type = FileSystemType::B;
+    //         else 
+    //             cfg.fs_type = FileSystemType::C;
 
-            Metrics m = OverallRun(cfg);
+    //         Metrics m = OverallRun(cfg);
 
 
-            csv
-                << cfg.depth << ','
-                << cfg.width << ','
-                << cfg.fill_factor << ','
+    //         csv
+    //             << cfg.depth << ','
+    //             << cfg.width << ','
+    //             << cfg.fill_factor << ','
 
-                << profiles[j].name << ','
+    //             << profiles[j].name << ','
 
-                << char('A' + s) << ','
+    //             << char('A' + s) << ','
 
-                << (cfg.distribution == Distribution::Uniform
-                        ? "uniform"
-                        : "zipf")
-                << ','
+    //             << (cfg.distribution == Distribution::Uniform
+    //                     ? "uniform"
+    //                     : "zipf")
+    //             << ','
 
-                << cfg.zipf_p << ','
-                << cfg.locality << ','
+    //             << cfg.zipf_p << ','
+    //             << cfg.locality << ','
 
-                << cfg.p_read << ','
-                << cfg.p_write << ','
-                << cfg.p_mkdir << ','
-                << cfg.p_ls << ','
-                << cfg.p_mv << ','
-                << cfg.p_find << ','
+    //             << cfg.p_read << ','
+    //             << cfg.p_write << ','
+    //             << cfg.p_mkdir << ','
+    //             << cfg.p_ls << ','
+    //             << cfg.p_mv << ','
+    //             << cfg.p_find << ','
 
-                << m.avg_latency_us << ','
-                << m.p99_latency_us << ','
-                << m.throughput_ops_sec << ','
-                << m.memory_usage_bytes
+    //             << m.avg_latency_us << ','
+    //             << m.p99_latency_us << ','
+    //             << m.throughput_ops_sec << ','
+    //             << m.memory_usage_bytes
 
-                << '\n';
-        }
+    //             << '\n';
+    //     }
         
-        }
-
-        }
-}
+    //     }
+// }
 
 }; // namespace benchmark

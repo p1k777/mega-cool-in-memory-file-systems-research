@@ -105,7 +105,7 @@ public:
     ~Benchmark() = default;
 
 
-    Metrics OverallRun(const ExperimentConfig& cfg);
+    Metrics OverallRun(const ExperimentConfig& cfg, const std::vector<OperationType>& op_types);
     template <typename FileSystem>
     Metrics SingleRun(
         const FileSystem& base_fs,

@@ -217,6 +217,16 @@ std::vector<CsvRow> RunProfileConfigs(
     std::vector<CsvRow> rows;
     rows.reserve(benchmark::d_profiles.size());
 
+    std::vector<OperationType> op_types = generate_operations(
+        operations,
+        profile.op_read,
+        profile.op_write,
+        profile.op_mkdir,
+        profile.op_ls,
+        profile.op_mv,
+        profile.op_find
+    );
+
     for (const auto& distribution_profile : benchmark::d_profiles) {
         ExperimentConfig cfg = MakeConfig(
             fs_type,
@@ -232,7 +242,7 @@ std::vector<CsvRow> RunProfileConfigs(
         rows.push_back(CsvRow{
             .cfg = cfg,
             .profile_name = profile.name,
-            .metrics = benchmark.OverallRun(cfg)
+            .metrics = benchmark.OverallRun(cfg, op_types)
         });
     }
 
@@ -267,8 +277,8 @@ int main(int argc, char** argv) {
         for (int depth : {2, 10, 20}) {
             for (int width : {10, 50, 300}) {
                 for (double fill_factor : {0.3, 0.95}) {
-                    std::vector<std::thread> threads;
-                    threads.reserve(benchmark::profiles.size());
+                    // std::vector<std::thread> threads;
+                    // threads.reserve(benchmark::profiles.size());
                     std::vector<std::vector<CsvRow>> profile_rows(
                         benchmark::profiles.size()
                     );
@@ -276,16 +286,6 @@ int main(int argc, char** argv) {
                     for (std::size_t profile_idx = 0;
                          profile_idx < benchmark::profiles.size();
                          ++profile_idx) {
-                        threads.emplace_back(
-                            [&profile_rows, profile_idx](
-                                FileSystemType fs_type,
-                                std::size_t repeats,
-                                std::size_t operations,
-                                int depth,
-                                int width,
-                                double fill_factor,
-                                const benchmark::ProbabilityProfile& profile
-                            ) {
                                 profile_rows[profile_idx] = RunProfileConfigs(
                                     fs_type,
                                     repeats,
@@ -293,22 +293,13 @@ int main(int argc, char** argv) {
                                     depth,
                                     width,
                                     fill_factor,
-                                    profile
+                                    std::cref(benchmark::profiles[profile_idx])
                                 );
-                            },
-                            fs_type,
-                            repeats,
-                            operations,
-                            depth,
-                            width,
-                            fill_factor,
-                            std::cref(benchmark::profiles[profile_idx])
-                        );
                     }
 
-                    for (std::thread& thread : threads) {
-                        thread.join();
-                    }
+                    // for (std::thread& thread : threads) {
+                    //     thread.join();
+                    // }
 
                     for (const auto& profile_result : profile_rows) {
                         for (const CsvRow& row : profile_result) {
