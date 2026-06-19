@@ -79,8 +79,8 @@ namespace fsgenerator {
         return *this;
     }
 
-    void GeneratedFs::fill(filesystem::IFileSystem& fs_impl) {
-        for (auto& node : fs_) {
+    void GeneratedFs::fill(filesystem::IFileSystem& fs_impl) const {
+        for (const auto& node : fs_) {
             if (node.path == "/") { continue; }
 
             if (node.is_file) {

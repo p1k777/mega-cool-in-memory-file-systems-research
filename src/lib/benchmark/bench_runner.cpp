@@ -8,7 +8,6 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <thread>
 #include <vector>
 
 #include "bench.hpp"
@@ -31,14 +30,18 @@ using CFileSystem = filesystem::FlatHashFileSystem;
 void PrintUsage(const char* program) {
     std::cerr
         << "Usage:\n"
-        << "  " << program << " FS Repeats Ops OutputCsv\n\n"
+        << "  " << program << " FS Repeats Ops Profile OutputCsv\n\n"
         << "Arguments:\n"
         << "  FS         A | B | C\n"
         << "  Repeats    number of repeats for each grid point\n"
         << "  Ops        number of operations in each run\n"
+        << "  Profile    build_system|build|bs | "
+           "file_manager|file|fm | "
+           "database|db | "
+           "web_server|web|ws\n"
         << "  OutputCsv  path to output csv file\n\n"
         << "Example:\n"
-        << "  " << program << " B 5 10000 results.csv\n";
+        << "  " << program << " B 5 10000 db results.csv\n";
 }
 
 std::size_t ParseSize(const char* value, std::string_view name) {
@@ -72,6 +75,50 @@ FileSystemType ParseFileSystemType(std::string_view value) {
     throw std::invalid_argument("FS must be one of: A, B, C");
 }
 
+const benchmark::ProbabilityProfile& ParseProfile(std::string_view value) {
+    auto matches = [value](std::string_view full_name,
+                           std::initializer_list<std::string_view> aliases) {
+        if (value == full_name) {
+            return true;
+        }
+
+        for (const std::string_view alias : aliases) {
+            if (value == alias) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    for (const auto& profile : benchmark::profiles) {
+        if (matches(profile.name, {"build", "bs"}) &&
+            profile.name == "build_system") {
+            return profile;
+        }
+
+        if (matches(profile.name, {"file", "fm"}) &&
+            profile.name == "file_manager") {
+            return profile;
+        }
+
+        if (matches(profile.name, {"db"}) &&
+            profile.name == "database") {
+            return profile;
+        }
+
+        if (matches(profile.name, {"web", "ws"}) &&
+            profile.name == "web_server") {
+            return profile;
+        }
+    }
+
+    throw std::invalid_argument(
+        "Profile must be one of: build_system/build/bs, "
+        "file_manager/file/fm, database/db, web_server/web/ws"
+    );
+}
+
 std::string FileSystemTypeToString(FileSystemType type) {
     switch (type) {
         case FileSystemType::A:
@@ -94,19 +141,6 @@ std::string DistributionToString(Distribution dist) {
     }
 
     return "unknown";
-}
-
-std::unique_ptr<filesystem::IFileSystem> MakeFileSystem(FileSystemType type) {
-    switch (type) {
-        case FileSystemType::A:
-            return std::make_unique<AFileSystem>();
-        case FileSystemType::B:
-            return std::make_unique<BFileSystem>();
-        case FileSystemType::C:
-            return std::make_unique<CFileSystem>();
-    }
-
-    throw std::invalid_argument("unknown filesystem type");
 }
 
 bool CsvNeedsHeader(const std::string& path) {
@@ -154,12 +188,6 @@ void WriteCsvRow(
         << metrics.memory_usage_bytes << '\n';
 }
 
-struct CsvRow {
-    ExperimentConfig cfg;
-    std::string profile_name;
-    Metrics metrics;
-};
-
 void ValidateArguments(std::size_t repeats, std::size_t operations) {
     if (repeats == 0) {
         throw std::invalid_argument("Repeats must be > 0");
@@ -204,7 +232,9 @@ ExperimentConfig MakeConfig(
     return cfg;
 }
 
-std::vector<CsvRow> RunProfileConfigs(
+void RunProfileConfigs(
+    std::ofstream& output,
+    const fsgenerator::GeneratedFs& file_system,
     FileSystemType fs_type,
     std::size_t repeats,
     std::size_t operations,
@@ -214,8 +244,6 @@ std::vector<CsvRow> RunProfileConfigs(
     const benchmark::ProbabilityProfile& profile
 ) {
     Benchmark benchmark;
-    std::vector<CsvRow> rows;
-    rows.reserve(benchmark::d_profiles.size());
 
     for (const auto& distribution_profile : benchmark::d_profiles) {
         ExperimentConfig cfg = MakeConfig(
@@ -229,21 +257,27 @@ std::vector<CsvRow> RunProfileConfigs(
             distribution_profile
         );
 
-        rows.push_back(CsvRow{
-            .cfg = cfg,
-            .profile_name = profile.name,
-            .metrics = benchmark.OverallRun(cfg)
-        });
-    }
+        const std::vector<benchmark::Operation> operations =
+            benchmark.BuildOperations(file_system, cfg);
+        const Metrics metrics =
+            benchmark.RunPrepared(file_system, cfg, operations);
+        WriteCsvRow(output, cfg, profile.name, metrics);
 
-    return rows;
+        std::cout
+            << "[BM RUN] Suit Profile=" << profile.name
+            << " D=" << cfg.depth
+            << " W=" << cfg.width
+            << " F=" << cfg.fill_factor
+            << " Dist=" << DistributionToString(cfg.distribution)
+            << " finished" << '\n';
+    }
 }
 
 } // namespace
 
 int main(int argc, char** argv) {
     try {
-        if (argc != 5) {
+        if (argc != 6) {
             PrintUsage(argv[0]);
             return EXIT_FAILURE;
         }
@@ -251,79 +285,10 @@ int main(int argc, char** argv) {
         const FileSystemType fs_type = ParseFileSystemType(argv[1]);
         const std::size_t repeats = ParseSize(argv[2], "Repeats");
         const std::size_t operations = ParseSize(argv[3], "Ops");
-        const std::string output_csv = argv[4];
+        const benchmark::ProbabilityProfile& profile = ParseProfile(argv[4]);
+        const std::string output_csv = argv[5];
 
         ValidateArguments(repeats, operations);
-
-        std::vector<CsvRow> rows;
-        rows.reserve(
-            3U
-            * 3U
-            * 3U
-            * benchmark::profiles.size()
-            * benchmark::d_profiles.size()
-        );
-
-        for (int depth : {2, 5, 10}) {
-            for (int width : {5, 10, 15}) {
-                for (double fill_factor : {0.3, 0.6, 0.95}) {
-                    std::vector<std::thread> threads;
-                    threads.reserve(benchmark::profiles.size());
-                    std::vector<std::vector<CsvRow>> profile_rows(
-                        benchmark::profiles.size()
-                    );
-
-                    for (std::size_t profile_idx = 0;
-                         profile_idx < benchmark::profiles.size();
-                         ++profile_idx) {
-                        threads.emplace_back(
-                            [&profile_rows, profile_idx](
-                                FileSystemType fs_type,
-                                std::size_t repeats,
-                                std::size_t operations,
-                                int depth,
-                                int width,
-                                double fill_factor,
-                                const benchmark::ProbabilityProfile& profile
-                            ) {
-                                profile_rows[profile_idx] = RunProfileConfigs(
-                                    fs_type,
-                                    repeats,
-                                    operations,
-                                    depth,
-                                    width,
-                                    fill_factor,
-                                    profile
-                                );
-                            },
-                            fs_type,
-                            repeats,
-                            operations,
-                            depth,
-                            width,
-                            fill_factor,
-                            std::cref(benchmark::profiles[profile_idx])
-                        );
-                    }
-
-                    for (std::thread& thread : threads) {
-                        thread.join();
-                    }
-
-                    for (const auto& profile_result : profile_rows) {
-                        for (const CsvRow& row : profile_result) {
-                            rows.push_back(row);
-                            std::cout
-                                << "[BM RUN] Suit Profile=" << row.profile_name
-                                << " D=" << row.cfg.depth
-                                << " W=" << row.cfg.width
-                                << " F=" << row.cfg.fill_factor
-                                << " finished" << '\n';
-                        }
-                    }
-                }
-            }
-        }
 
         const bool need_header = CsvNeedsHeader(output_csv);
         std::ofstream output(output_csv, std::ios::app);
@@ -335,8 +300,30 @@ int main(int argc, char** argv) {
             WriteCsvHeader(output);
         }
 
-        for (const CsvRow& row : rows) {
-            WriteCsvRow(output, row.cfg, row.profile_name, row.metrics);
+        for (int depth : {2, 5, 10}) {
+            for (int width : {5, 10, 15}) {
+                for (double fill_factor : {0.3, 0.6, 0.95}) {
+                    fsgenerator::FsGenerator fs_generator(
+                        static_cast<std::size_t>(depth),
+                        static_cast<std::size_t>(width),
+                        fill_factor
+                    );
+                    const fsgenerator::GeneratedFs file_system =
+                        fs_generator.generate();
+
+                    RunProfileConfigs(
+                        output,
+                        file_system,
+                        fs_type,
+                        repeats,
+                        operations,
+                        depth,
+                        width,
+                        fill_factor,
+                        profile
+                    );
+                }
+            }
         }
 
         return EXIT_SUCCESS;

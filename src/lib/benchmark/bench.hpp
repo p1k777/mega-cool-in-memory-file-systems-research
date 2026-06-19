@@ -106,6 +106,19 @@ public:
 
 
     Metrics OverallRun(const ExperimentConfig& cfg);
+    Metrics OverallRun(
+        const fsgenerator::GeneratedFs& file_system,
+        const ExperimentConfig& cfg
+    );
+    std::vector<Operation> BuildOperations(
+        const fsgenerator::GeneratedFs& file_system,
+        const ExperimentConfig& cfg
+    );
+    Metrics RunPrepared(
+        const fsgenerator::GeneratedFs& file_system,
+        const ExperimentConfig& cfg,
+        const std::vector<Operation>& operations
+    );
     template <typename FileSystem>
     Metrics SingleRun(
         const FileSystem& base_fs,
