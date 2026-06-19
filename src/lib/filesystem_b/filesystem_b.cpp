@@ -1,7 +1,6 @@
 #include "filesystem_b.hpp"
 
 #include <stdexcept>
-#include <regex>
 #include <algorithm>
 
 namespace filesystem {
@@ -271,27 +270,37 @@ size_t FileSystemB::get_memory_usage() const noexcept {
     return sizeof(*this) + node_count_ * sizeof(Node) + memory_.bytes_allocated();
 }
 
-bool FileSystemB::matches_mask(const path_type& name, const path_type& mask) {
-    std::string regex_pattern = "^";
+bool FileSystemB::matches_mask(std::string_view name, std::string_view mask) {
+    if(mask == "*") {
+        return true;
+    }
 
-    for(char c : mask) {
-        if(c == '*') {
-            regex_pattern += ".*";
-        } else if(c == '?') {
-            regex_pattern += ".";
-        } else if(c == '.' || c == '\\' || c == '+' || c == '(' || c == ')' ||
-                  c == '[' || c == ']' || c == '{' || c == '}' || c == '^' ||
-                  c == '$' || c == '|') {
-            regex_pattern += '\\';
-            regex_pattern += c;
+    size_t name_pos = 0;
+    size_t mask_pos = 0;
+    size_t star_pos = std::string_view::npos;
+    size_t match_after_star = 0;
+
+    while(name_pos < name.size()) {
+        if(mask_pos < mask.size() &&
+           (mask[mask_pos] == '?' || mask[mask_pos] == name[name_pos])) {
+            ++name_pos;
+            ++mask_pos;
+        } else if(mask_pos < mask.size() && mask[mask_pos] == '*') {
+            star_pos = mask_pos++;
+            match_after_star = name_pos;
+        } else if(star_pos != std::string_view::npos) {
+            mask_pos = star_pos + 1;
+            name_pos = ++match_after_star;
         } else {
-            regex_pattern += c;
+            return false;
         }
     }
 
-    regex_pattern += "$";
+    while(mask_pos < mask.size() && mask[mask_pos] == '*') {
+        ++mask_pos;
+    }
 
-    return std::regex_match(name, std::regex(regex_pattern));
+    return mask_pos == mask.size();
 }
 
 IFileSystem::path_type FileSystemB::build_path(const Node* node) const {
@@ -319,7 +328,7 @@ IFileSystem::path_type FileSystemB::build_path(const Node* node) const {
 void FileSystemB::find_dfs(const Node* node, const path_type& pattern, units_list_type& result) const {
     path_type current_path = build_path(node);
 
-    if(node != root_.get() && matches_mask(to_path(node->name), pattern)) {
+    if(node != root_.get() && matches_mask(node->name, pattern)) {
         result.push_back(current_path);
     }
 

@@ -76,7 +76,7 @@ private:
     static path_type join_path(const path_type& parent, const path_type& name);
 
 
-    static bool matches_mask(const path_type& name, const path_type& mask);
+    static bool matches_mask(std::string_view name, std::string_view mask);
 
     path_type build_path(const Node* node) const;
 
