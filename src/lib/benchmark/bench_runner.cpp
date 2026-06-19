@@ -37,6 +37,8 @@ void PrintUsage(const char* program) {
         << "  Ops        number of operations in each run\n"
         << "  Profile    build_system|build|bs | "
            "file_manager|file|fm | "
+           "backup|bu | "
+           "refactoring|ref | "
            "database|db | "
            "web_server|web|ws\n"
         << "  OutputCsv  path to output csv file\n\n"
@@ -102,6 +104,16 @@ const benchmark::ProbabilityProfile& ParseProfile(std::string_view value) {
             return profile;
         }
 
+        if (matches(profile.name, {"bu"}) &&
+            profile.name == "backup") {
+            return profile;
+        }
+
+        if (matches(profile.name, {"ref"}) &&
+            profile.name == "refactoring") {
+            return profile;
+        }
+
         if (matches(profile.name, {"db"}) &&
             profile.name == "database") {
             return profile;
@@ -115,7 +127,8 @@ const benchmark::ProbabilityProfile& ParseProfile(std::string_view value) {
 
     throw std::invalid_argument(
         "Profile must be one of: build_system/build/bs, "
-        "file_manager/file/fm, database/db, web_server/web/ws"
+        "file_manager/file/fm, backup/bu, refactoring/ref, "
+        "database/db, web_server/web/ws"
     );
 }
 
@@ -167,9 +180,9 @@ void WriteCsvRow(
 ) {
     output
         << FileSystemTypeToString(cfg.fs_type) << ','
-        << cfg.depth << ','
-        << cfg.width << ','
-        << cfg.fill_factor << ','
+        << cfg.D << ','
+        << cfg.W << ','
+        << cfg.F << ','
         << profile_name << ','
         << cfg.p_read << ','
         << cfg.p_write << ','
@@ -210,9 +223,9 @@ ExperimentConfig MakeConfig(
 ) {
     ExperimentConfig cfg{};
 
-    cfg.depth = depth;
-    cfg.width = width;
-    cfg.fill_factor = fill_factor;
+    cfg.D = depth;
+    cfg.W = width;
+    cfg.F = fill_factor;
 
     cfg.p_read = profile.op_read;
     cfg.p_write = profile.op_write;
@@ -265,9 +278,9 @@ void RunProfileConfigs(
 
         std::cout
             << "[BM RUN] Suit Profile=" << profile.name
-            << " D=" << cfg.depth
-            << " W=" << cfg.width
-            << " F=" << cfg.fill_factor
+            << " D=" << cfg.D
+            << " W=" << cfg.W
+            << " F=" << cfg.F
             << " Dist=" << DistributionToString(cfg.distribution)
             << " finished" << '\n';
     }
