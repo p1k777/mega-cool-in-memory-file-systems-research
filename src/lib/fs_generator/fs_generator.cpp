@@ -71,6 +71,7 @@ namespace fsgenerator {
             }
         }
 
+        ensure_file_exists_();
         return GeneratedFs(tree_);
     }
 
@@ -106,6 +107,36 @@ namespace fsgenerator {
                 parent
             );
         }
+    }
+
+    void FsGenerator::ensure_file_exists_() {
+        if (files_count_ != 0) {
+            return;
+        }
+
+        for (size_t node_idx = tree_.size(); node_idx-- > 0;) {
+            const auto& node = tree_[node_idx];
+            if (!node.is_file
+                && node.depth < target_depth_
+                && node.children < target_width_) {
+                add_file_(std::string("file") + std::to_string(files_count_++), node_idx);
+                return;
+            }
+        }
+
+        for (size_t node_idx = tree_.size(); node_idx-- > 0;) {
+            auto& node = tree_[node_idx];
+            if (!node.is_root && !node.is_file && node.children == 0) {
+                node.is_file = true;
+                ++files_count_;
+                if (dirs_count_ != 0) {
+                    --dirs_count_;
+                }
+                return;
+            }
+        }
+
+        throw std::runtime_error("failed to generate a filesystem with at least one file");
     }
 
     void FsGenerator::add_dir_(std::string name, size_t parent, bool is_root) {
