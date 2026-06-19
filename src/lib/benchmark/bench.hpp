@@ -84,8 +84,8 @@ struct ExperimentConfig
 const std::vector<ProbabilityProfile> profiles {
     ProbabilityProfile{"build_system", 0.50, 0.25, 0.10, 0.05, 0.05, 0.05},
     ProbabilityProfile{"file_manager", 0.20, 0.05, 0.45, 0.10, 0.10, 0.10},
-    ProbabilityProfile{"backup", 0.1, 0.7, 0.0, 0.0, 0.2, 0.0,},
-    ProbabilityProfile{"refactoring", 0.1, 0.1, 0.1, 0.1, 0.5, 0.1,},
+    // ProbabilityProfile{"backup", 0.1, 0.7, 0.0, 0.0, 0.2, 0.0,},
+    // ProbabilityProfile{"refactoring", 0.1, 0.1, 0.1, 0.1, 0.5, 0.1,},
     ProbabilityProfile{"database", 0.55, 0.45, 0.00, 0.00, 0.00, 0.00},
     ProbabilityProfile{"web_server", 0.8, 0.1, 0.0, 0.1, 0.0, 0.0}
 };
@@ -105,8 +105,13 @@ public:
     ~Benchmark() = default;
 
 
-    Metrics OverallRun(filesystem::IFileSystem& fs, const ExperimentConfig& cfg);
-    Metrics SingleRun(fsgenerator::GeneratedFs&, const ExperimentConfig&, const std::vector <Operation> &);
+    Metrics OverallRun(const ExperimentConfig& cfg);
+    template <typename FileSystem>
+    Metrics SingleRun(
+        const FileSystem& base_fs,
+        const ExperimentConfig& cfg,
+        const std::vector<Operation>& operations
+    );
   
     void GenerateDataset(filesystem::IFileSystem& fs);
 

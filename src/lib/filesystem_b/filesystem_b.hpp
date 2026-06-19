@@ -11,6 +11,11 @@ namespace filesystem {
 class FileSystemB : public IFileSystem {
 public:
     FileSystemB();
+    FileSystemB(const FileSystemB& other);
+    FileSystemB& operator=(const FileSystemB& other);
+    FileSystemB(FileSystemB&&) noexcept = default;
+    FileSystemB& operator=(FileSystemB&&) noexcept = default;
+
     bytes_type op_read(const path_type&) const override;
     void op_write(const path_type&, const bytes_type&) override;
 
@@ -19,7 +24,6 @@ public:
 
     void op_mv(const path_type&, const path_type&) override;
     units_list_type op_find(const path_type&, const path_type&) const override;
-
     size_t get_memory_usage() const noexcept override;
 
 private:
@@ -90,6 +94,7 @@ private:
     std::unique_ptr<Node> detach_from_parent(Node* node);
 
     PmrString make_key(const path_type& path) const;
+    std::unique_ptr<Node> clone_subtree(const Node& node, Node* parent);
    
 };
 

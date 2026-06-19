@@ -20,7 +20,6 @@ public:
 
     void op_mv(const path_type& from, const path_type& to) override;
     units_list_type op_find(const path_type& root, const path_type& pattern) const override;
-
     size_t get_memory_usage() const noexcept override;
 
 private:

@@ -7,6 +7,38 @@
 
 namespace filesystem {
 
+TreeFileSystem::TreeFileSystem(const TreeFileSystem& other) {
+    root_.name = other.root_.name;
+    root_.is_directory = other.root_.is_directory;
+    root_.data = other.root_.data;
+    root_.parent = nullptr;
+    root_.children.clear();
+    root_.children.reserve(other.root_.children.size());
+
+    for (const auto& child : other.root_.children) {
+        root_.children.push_back(clone_node(*child, &root_));
+    }
+}
+
+TreeFileSystem& TreeFileSystem::operator=(const TreeFileSystem& other) {
+    if (this == &other) {
+        return *this;
+    }
+
+    root_.name = other.root_.name;
+    root_.is_directory = other.root_.is_directory;
+    root_.data = other.root_.data;
+    root_.parent = nullptr;
+    root_.children.clear();
+    root_.children.reserve(other.root_.children.size());
+
+    for (const auto& child : other.root_.children) {
+        root_.children.push_back(clone_node(*child, &root_));
+    }
+
+    return *this;
+}
+
 IFileSystem::bytes_type TreeFileSystem::op_read(const path_type& path) const {
     const Node* node = find_node(path);
 
@@ -376,6 +408,24 @@ void TreeFileSystem::collect_find(
                 : current_path + "/" + child->name;
         collect_find(*child, child_path, pattern, result);
     }
+}
+
+std::unique_ptr<TreeFileSystem::Node> TreeFileSystem::clone_node(
+    const Node& node,
+    Node* parent
+) {
+    auto copy = std::make_unique<Node>();
+    copy->name = node.name;
+    copy->is_directory = node.is_directory;
+    copy->data = node.data;
+    copy->parent = parent;
+    copy->children.reserve(node.children.size());
+
+    for (const auto& child : node.children) {
+        copy->children.push_back(clone_node(*child, copy.get()));
+    }
+
+    return copy;
 }
 
 size_t TreeFileSystem::memory_usage_of(const Node& node) noexcept {

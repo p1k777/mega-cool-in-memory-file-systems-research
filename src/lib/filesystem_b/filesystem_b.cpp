@@ -52,6 +52,28 @@ FileSystemB::FileSystemB()
     index_.emplace(make_key("/"), root_.get());
 }
 
+FileSystemB::FileSystemB(const FileSystemB& other)
+    : root_(nullptr)
+    , index_(&memory_) {
+    root_ = clone_subtree(*other.root_, nullptr);
+    add_index_for_subtree(root_.get());
+}
+
+FileSystemB& FileSystemB::operator=(const FileSystemB& other) {
+    if (this == &other) {
+        return *this;
+    }
+
+    index_.clear();
+    root_.reset();
+    node_count_ = 0;
+
+    root_ = clone_subtree(*other.root_, nullptr);
+    add_index_for_subtree(root_.get());
+
+    return *this;
+}
+
 FileSystemB::Node::Node(std::pmr::memory_resource* memory, std::string_view name_value,
                                                         Node* parent_value)
     : name(std::pmr::polymorphic_allocator<char>{memory})
@@ -378,6 +400,20 @@ std::unique_ptr<FileSystemB::Node> FileSystemB::detach_from_parent(Node* node) {
     children.erase(it);
 
     return owned;
+}
+
+std::unique_ptr<FileSystemB::Node> FileSystemB::clone_subtree(
+    const Node& node,
+    Node* parent
+) {
+    auto copy = create_node(to_path(node.name), parent, node.is_file);
+    copy->data.assign(node.data.begin(), node.data.end());
+
+    for (const auto& child : node.children) {
+        copy->children.push_back(clone_subtree(*child, copy.get()));
+    }
+
+    return copy;
 }
 
 void FileSystemB::validate_path(const path_type& path) {

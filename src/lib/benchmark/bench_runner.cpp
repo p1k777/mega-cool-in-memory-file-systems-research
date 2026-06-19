@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <thread>
+#include <vector>
 
 #include "bench.hpp"
 #include "../common.hpp"
@@ -152,6 +154,12 @@ void WriteCsvRow(
         << metrics.memory_usage_bytes << '\n';
 }
 
+struct CsvRow {
+    ExperimentConfig cfg;
+    std::string profile_name;
+    Metrics metrics;
+};
+
 void ValidateArguments(std::size_t repeats, std::size_t operations) {
     if (repeats == 0) {
         throw std::invalid_argument("Repeats must be > 0");
@@ -196,6 +204,41 @@ ExperimentConfig MakeConfig(
     return cfg;
 }
 
+std::vector<CsvRow> RunProfileConfigs(
+    FileSystemType fs_type,
+    std::size_t repeats,
+    std::size_t operations,
+    int depth,
+    int width,
+    double fill_factor,
+    const benchmark::ProbabilityProfile& profile
+) {
+    Benchmark benchmark;
+    std::vector<CsvRow> rows;
+    rows.reserve(benchmark::d_profiles.size());
+
+    for (const auto& distribution_profile : benchmark::d_profiles) {
+        ExperimentConfig cfg = MakeConfig(
+            fs_type,
+            repeats,
+            operations,
+            depth,
+            width,
+            fill_factor,
+            profile,
+            distribution_profile
+        );
+
+        rows.push_back(CsvRow{
+            .cfg = cfg,
+            .profile_name = profile.name,
+            .metrics = benchmark.OverallRun(cfg)
+        });
+    }
+
+    return rows;
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -212,6 +255,76 @@ int main(int argc, char** argv) {
 
         ValidateArguments(repeats, operations);
 
+        std::vector<CsvRow> rows;
+        rows.reserve(
+            3U
+            * 3U
+            * 2U
+            * benchmark::profiles.size()
+            * benchmark::d_profiles.size()
+        );
+
+        for (int depth : {2, 10, 20}) {
+            for (int width : {10, 50, 300}) {
+                for (double fill_factor : {0.3, 0.95}) {
+                    std::vector<std::thread> threads;
+                    threads.reserve(benchmark::profiles.size());
+                    std::vector<std::vector<CsvRow>> profile_rows(
+                        benchmark::profiles.size()
+                    );
+
+                    for (std::size_t profile_idx = 0;
+                         profile_idx < benchmark::profiles.size();
+                         ++profile_idx) {
+                        threads.emplace_back(
+                            [&profile_rows, profile_idx](
+                                FileSystemType fs_type,
+                                std::size_t repeats,
+                                std::size_t operations,
+                                int depth,
+                                int width,
+                                double fill_factor,
+                                const benchmark::ProbabilityProfile& profile
+                            ) {
+                                profile_rows[profile_idx] = RunProfileConfigs(
+                                    fs_type,
+                                    repeats,
+                                    operations,
+                                    depth,
+                                    width,
+                                    fill_factor,
+                                    profile
+                                );
+                            },
+                            fs_type,
+                            repeats,
+                            operations,
+                            depth,
+                            width,
+                            fill_factor,
+                            std::cref(benchmark::profiles[profile_idx])
+                        );
+                    }
+
+                    for (std::thread& thread : threads) {
+                        thread.join();
+                    }
+
+                    for (const auto& profile_result : profile_rows) {
+                        for (const CsvRow& row : profile_result) {
+                            rows.push_back(row);
+                            std::cout
+                                << "[BM RUN] Suit Profile=" << row.profile_name
+                                << " D=" << row.cfg.depth
+                                << " W=" << row.cfg.width
+                                << " F=" << row.cfg.fill_factor
+                                << " finished" << '\n';
+                        }
+                    }
+                }
+            }
+        }
+
         const bool need_header = CsvNeedsHeader(output_csv);
         std::ofstream output(output_csv, std::ios::app);
         if (!output) {
@@ -222,33 +335,8 @@ int main(int argc, char** argv) {
             WriteCsvHeader(output);
         }
 
-        Benchmark benchmark;
-
-        for (int depth : {2, 5, 10, 15, 20}) {
-            for (int width : {10, 30, 100, 300}) {
-                for (double fill_factor : {0.3, 0.6, 0.95}) {
-                    for (const auto& profile : benchmark::profiles) {
-                        for (const auto& distribution_profile : benchmark::d_profiles) {
-                            ExperimentConfig cfg = MakeConfig(
-                                fs_type,
-                                repeats,
-                                operations,
-                                depth,
-                                width,
-                                fill_factor,
-                                profile,
-                                distribution_profile
-                            );
-
-                            auto fs = MakeFileSystem(fs_type);
-                            const Metrics metrics = benchmark.OverallRun(*fs, cfg);
-
-                            WriteCsvRow(output, cfg, profile.name, metrics);
-                            std::cout << "[BM RUN] Suit Profile=" << profile.name << " D=" << depth << " W=" << width << " F=" << fill_factor << " finished" << '\n';
-                        }
-                    }
-                }
-            }
+        for (const CsvRow& row : rows) {
+            WriteCsvRow(output, row.cfg, row.profile_name, row.metrics);
         }
 
         return EXIT_SUCCESS;
