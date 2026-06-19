@@ -39,7 +39,26 @@ private:
     using PmrString = std::pmr::string;
     using PmrByte = bytes_type::value_type;
     using PmrBytes = std::pmr::vector<PmrByte>;
+    struct TransparentHash {
+        using is_transparent = void;
 
+        size_t operator()(std::string_view value) const noexcept {
+            return std::hash<std::string_view>{}(value);
+        }
+
+        size_t operator()(const PmrString& value) const noexcept {
+            return (*this)(std::string_view{value.data(), value.size()});
+        }
+    };
+
+    struct TransparentEqual {
+        using is_transparent = void;
+
+        bool operator()(std::string_view lhs, std::string_view rhs) const noexcept {
+            return lhs == rhs;
+        }
+    };
+    
     struct Node {
         PmrString name;
         bool is_file = false;
@@ -58,7 +77,7 @@ private:
 
     std::unique_ptr<Node> root_;
 
-    std::pmr::unordered_map<PmrString, Node*> index_;
+    std::pmr::unordered_map<PmrString, Node*, TransparentHash, TransparentEqual> index_;
 
     size_t node_count_ = 0;
 

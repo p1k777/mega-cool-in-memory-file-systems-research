@@ -62,7 +62,7 @@ FileSystemB::Node::Node(std::pmr::memory_resource* memory, std::string_view name
 }
 
 FileSystemB::Node* FileSystemB::get_node(const path_type& path) {
-    auto it = index_.find(make_key(path));
+    auto it = index_.find(std::string_view{path});
 
     if(it == index_.end()) {
         throw std::runtime_error("path does not exist");
@@ -72,7 +72,7 @@ FileSystemB::Node* FileSystemB::get_node(const path_type& path) {
 }
 
 const FileSystemB::Node* FileSystemB::get_node(const path_type& path) const {
-    auto it = index_.find(make_key(path));
+    auto it = index_.find(std::string_view{path});
 
     if(it == index_.end()) {
         throw std::runtime_error("path does not exist");
@@ -131,7 +131,7 @@ void FileSystemB::op_mkdir(const path_type& path) {
         return;
     }
 
-    if(index_.find(make_key(path)) != index_.end()) {
+    if(index_.find(std::string_view{path}) != index_.end()) {
         throw std::runtime_error("path already exists");
     }
 
@@ -155,7 +155,7 @@ void FileSystemB::op_mkdir(const path_type& path) {
 void FileSystemB::op_write(const path_type& path, const bytes_type& data) {
     validate_path(path); 
     
-    auto it = index_.find(make_key(path));
+    auto it = index_.find(std::string_view{path});
 
     if(it != index_.end()) {
         Node* node = it->second;
@@ -212,13 +212,13 @@ void FileSystemB::op_mv(const path_type& from, const path_type& to) {
         throw std::runtime_error("cannot move root");
     }
 
-    auto from_it = index_.find(make_key(from));
+    auto from_it = index_.find(std::string_view{from});
 
     if(from_it == index_.end()) {
         throw std::runtime_error("source does not exist");
     }
 
-    if(index_.find(make_key(to)) != index_.end()) {
+    if(index_.find(std::string_view{to}) != index_.end()) {
         throw std::runtime_error("destination already exists");
     }
 
@@ -362,7 +362,11 @@ bool FileSystemB::is_inside(const path_type& from, const path_type& to) {
 
 void FileSystemB::erase_index_for_subtree(Node* node) {
     auto path = build_path(node);
-    index_.erase(make_key(path));
+    auto it = index_.find(std::string_view{path});
+
+    if(it != index_.end()) {
+        index_.erase(it);
+    }
 
     for(auto& child : node->children) {
         erase_index_for_subtree(child.get());
