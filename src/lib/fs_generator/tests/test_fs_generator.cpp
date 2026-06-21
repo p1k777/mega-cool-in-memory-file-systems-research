@@ -250,6 +250,17 @@ TEST(FsGeneratorTest, Params) {
 
 }
 
+TEST(FsGeneratorTest, GuaranteesAtLeastOneFile) {
+    FsGenerator g(3, 1, 1.0, 0.0);
+
+    FakeFileSystem fs;
+    GeneratedFs(g.generate()).fill(fs);
+
+    EXPECT_GE(fs.get_files_count(), 1);
+    EXPECT_LE(fs.get_max_depth(), 3);
+    EXPECT_LE(fs.get_max_width(), 1);
+}
+
 TEST(GeneratedFsAccessorsTest, GetNodeAndPathReturnCorrectData) {
     std::vector<tree_node_type> mock_tree = {
         {"", 0, 0, 1, false, true},

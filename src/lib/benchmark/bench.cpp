@@ -43,9 +43,22 @@ Metrics Benchmark::SingleRun(
 Metrics Benchmark::OverallRun(
         const ExperimentConfig &cfg)
 {
-    fsgenerator::FsGenerator fs_generator(cfg.depth, cfg.width, cfg.fill_factor);
+    fsgenerator::FsGenerator fs_generator(cfg.D, cfg.W, cfg.F);
     fsgenerator::GeneratedFs file_system = fs_generator.generate();
+    return OverallRun(file_system, cfg);
+}
 
+Metrics Benchmark::OverallRun(
+        const fsgenerator::GeneratedFs& file_system,
+        const ExperimentConfig &cfg)
+{
+    return RunPrepared(file_system, cfg, BuildOperations(file_system, cfg));
+}
+
+std::vector<Operation> Benchmark::BuildOperations(
+        const fsgenerator::GeneratedFs& file_system,
+        const ExperimentConfig &cfg)
+{
     std::vector <OperationType> op_types = generate_operations(
         cfg.operations,
         cfg.p_read,
@@ -67,6 +80,7 @@ Metrics Benchmark::OverallRun(
 
     int p_idx = 0;
     std::vector <Operation> ops;
+    ops.reserve(cfg.operations);
     for (int i = 0; i < cfg.operations; ++i) {
         Operation operation;
         operation.type = op_types[i];
@@ -81,6 +95,14 @@ Metrics Benchmark::OverallRun(
         ops.push_back(operation);
     }
 
+    return ops;
+}
+
+Metrics Benchmark::RunPrepared(
+        const fsgenerator::GeneratedFs& file_system,
+        const ExperimentConfig &cfg,
+        const std::vector<Operation>& ops)
+{
     switch (cfg.fs_type) {
         case FileSystemType::A: {
             filesystem::TreeFileSystem base_fs;
@@ -227,9 +249,9 @@ void Benchmark::GenerateDataset(filesystem::IFileSystem& fs)
         for (int j = 0; j < 6; j++) {
             ExperimentConfig cfg;
 
-            cfg.depth = D_profile[d_idx];
-            cfg.width = W_profile[w_idx];
-            cfg.fill_factor = F_profile[f_idx];
+            cfg.D = D_profile[d_idx];
+            cfg.W = W_profile[w_idx];
+            cfg.F = F_profile[f_idx];
 
             cfg.operations = 100;
             cfg.repeats = 5;
@@ -256,9 +278,9 @@ void Benchmark::GenerateDataset(filesystem::IFileSystem& fs)
 
 
             csv
-                << cfg.depth << ','
-                << cfg.width << ','
-                << cfg.fill_factor << ','
+                << cfg.D << ','
+                << cfg.W << ','
+                << cfg.F << ','
 
                 << profiles[j].name << ','
 
