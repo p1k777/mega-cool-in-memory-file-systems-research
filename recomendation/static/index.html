@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+            name="description"
+            content="Подбор оптимальной in-memory файловой системы"
+        />
+        <title>Memory Match — рекомендатель файловой системы</title>
+        <link rel="stylesheet" href="styles.css" />
+        <script src="app.js" defer></script>
+    </head>
+    <body>
+        <div class="glow one"></div>
+        <div class="glow two"></div>
+        <header>
+            <a class="brand" href="#">memory<span>/match</span></a>
+            <div class="status"><i></i> Система активна</div>
+        </header>
+        <main>
+            <section class="hero">
+                <div>
+                    <p class="eyebrow">In-memory filesystem advisor</p>
+                    <h1>
+                        Найдём архитектуру,<br /><em
+                            >которая выдержит нагрузку.</em
+                        >
+                    </h1>
+                </div>
+                <p class="lead">
+                    Опишите дерево и профиль операций. Модель сравнит три
+                    реализации по задержке, памяти и пропускной способности.
+                </p>
+            </section>
+            <div class="workspace">
+                <form id="form" class="panel">
+                    <section class="form-section">
+                        <div class="section-title">
+                            <span>01</span>
+                            <div>
+                                <h2>Структура дерева</h2>
+                                <p>Размер и плотность виртуальной ФС</p>
+                            </div>
+                        </div>
+                        <div class="fields three">
+                            <label class="field"
+                                ><span>Глубина <b>D</b></span
+                                ><input
+                                    name="D"
+                                    type="number"
+                                    min="1"
+                                    max="20"
+                                    value="8"
+                                    required
+                                /><small>1–20 уровней</small></label
+                            >
+                            <label class="field"
+                                ><span>Ширина <b>W</b></span
+                                ><input
+                                    name="W"
+                                    type="number"
+                                    min="1"
+                                    max="70"
+                                    value="24"
+                                    required
+                                /><small>1–70 узлов</small></label
+                            >
+                            <label class="field"
+                                ><span>Заполнение <b>F</b></span
+                                ><input
+                                    name="F"
+                                    type="number"
+                                    min="0.01"
+                                    max="1"
+                                    step="0.01"
+                                    value="0.65"
+                                    required
+                                /><small>от 0.01 до 1</small></label
+                            >
+                        </div>
+                    </section>
+                    <section class="form-section">
+                        <div class="section-title">
+                            <span>02</span>
+                            <div>
+                                <h2>Профиль нагрузки</h2>
+                                <p>Доля каждой операции в общем потоке</p>
+                            </div>
+                        </div>
+                        <div class="prob-head">
+                            <span>Распределение операций</span
+                            ><output id="total">100%</output>
+                        </div>
+                        <div id="prob-error" class="error" role="alert"></div>
+                        <div class="prob-list">
+                            <label
+                                ><span><i class="read"></i>Чтение</span
+                                ><input
+                                    name="P_read"
+                                    type="range"
+                                    min="0"
+                                    max="1"
+                                    step=".01"
+                                    value=".35" /><input
+                                    class="prob-number"
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="1"
+                                    value="35"
+                                    aria-label="Чтение, процентов"
+                            /></label>
+                            <label
+                                ><span><i class="write"></i>Запись</span
+                                ><input
+                                    name="P_write"
+                                    type="range"
+                                    min="0"
+                                    max="1"
+                                    step=".01"
+                                    value=".20" /><input
+                                    class="prob-number"
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="1"
+                                    value="20"
+                                    aria-label="Запись, процентов"
+                            /></label>
+                            <label
+                                ><span><i class="mkdir"></i>Создание папок</span
+                                ><input
+                                    name="P_mkdir"
+                                    type="range"
+                                    min="0"
+                                    max="1"
+                                    step=".01"
+                                    value=".10" /><input
+                                    class="prob-number"
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="1"
+                                    value="10"
+                                    aria-label="Создание папок, процентов"
+                            /></label>
+                            <label
+                                ><span><i class="ls"></i>Список файлов</span
+                                ><input
+                                    name="P_ls"
+                                    type="range"
+                                    min="0"
+                                    max="1"
+                                    step=".01"
+                                    value=".15" /><input
+                                    class="prob-number"
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="1"
+                                    value="15"
+                                    aria-label="Список файлов, процентов"
+                            /></label>
+                            <label
+                                ><span><i class="move"></i>Перемещение</span
+                                ><input
+                                    name="P_mv"
+                                    type="range"
+                                    min="0"
+                                    max="1"
+                                    step=".01"
+                                    value=".10" /><input
+                                    class="prob-number"
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="1"
+                                    value="10"
+                                    aria-label="Перемещение, процентов"
+                            /></label>
+                            <label
+                                ><span
+                                    ><i class="find"></i>Глобальный поиск</span
+                                ><input
+                                    name="P_find"
+                                    type="range"
+                                    min="0"
+                                    max="1"
+                                    step=".01"
+                                    value=".10" /><input
+                                    class="prob-number"
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="1"
+                                    value="10"
+                                    aria-label="Глобальный поиск, процентов"
+                            /></label>
+                        </div>
+                        <button class="balance" id="balance" type="button">
+                            Выровнять до 100%
+                        </button>
+                    </section>
+                    <section class="form-section">
+                        <div class="section-title">
+                            <span>03</span>
+                            <div>
+                                <h2>Характер доступа</h2>
+                                <p>Распределение и локальность запросов</p>
+                            </div>
+                        </div>
+                        <div class="access">
+                            <fieldset>
+                                <legend>Распределение</legend>
+                                <label
+                                    ><input
+                                        type="radio"
+                                        name="Dist"
+                                        value="uniform"
+                                        checked
+                                    /><span
+                                        >Равномерное<small>Uniform</small></span
+                                    ></label
+                                ><label
+                                    ><input
+                                        type="radio"
+                                        name="Dist"
+                                        value="zipf"
+                                    /><span
+                                        >С перекосом<small>Zipf</small></span
+                                    ></label
+                                >
+                            </fieldset>
+                            <label id="alpha-field" class="field alpha"
+                                ><span>Коэффициент Zipf <b>α</b></span
+                                ><input
+                                    name="Zipf_Alpha"
+                                    type="number"
+                                    min=".1"
+                                    max="3"
+                                    step=".1"
+                                    value="1.2"
+                                /><small>от 0.1 до 3.0</small></label
+                            >
+                            <label class="field locality"
+                                ><span>Локальность <b>Loc</b></span
+                                ><input
+                                    name="Loc"
+                                    type="range"
+                                    min="0"
+                                    max="1"
+                                    step=".01"
+                                    value=".75"
+                                />
+                                <div>
+                                    <small>Случайный</small
+                                    ><label class="locality-input"
+                                        ><input
+                                            class="locality-number"
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            step="1"
+                                            value="75"
+                                            aria-label="Локальность, процентов"
+                                        /><span>%</span></label
+                                    ><small>Локальный</small>
+                                </div></label
+                            >
+                        </div>
+                    </section>
+                    <button class="submit" type="submit">
+                        <span>Подобрать файловую систему</span><b>→</b>
+                    </button>
+                </form>
+                <aside id="results" class="results" aria-live="polite">
+                    <div class="empty">
+                        <div class="orb"><span></span></div>
+                        <p class="eyebrow">Результат появится здесь</p>
+                        <h2>Настройте профиль<br />и запустите расчёт</h2>
+                        <p>
+                            Сравним три подхода и объясним рекомендацию в
+                            цифрах.
+                        </p>
+                    </div>
+                </aside>
+            </div>
+
+            <section class="systems" aria-labelledby="systems-title">
+                <div class="systems-heading">
+                    <div>
+                        <h2 id="systems-title">
+                            Три подхода к хранению дерева
+                        </h2>
+                    </div>
+                    <p>
+                        Все реализации поддерживают одинаковые операции, но
+                        по-разному платят памятью и временем за поиск, обход и
+                        перемещение.
+                    </p>
+                </div>
+                <div class="systems-grid">
+                    <article class="system-card system-a">
+                        <div class="system-top">
+                            <span class="system-letter">A</span>
+                        </div>
+                        <p class="system-code">TreeFileSystem</p>
+                        <h3>Классическое дерево</h3>
+                        <p class="system-copy">
+                            Каждый узел хранит имя, данные, ссылку на родителя и
+                            список дочерних узлов. Структура напрямую повторяет
+                            иерархию файловой системы.
+                        </p>
+                        <dl>
+                            <div>
+                                <dt>Сильная сторона</dt>
+                                <dd>
+                                    Минимальный расход памяти и естественный
+                                    обход каталогов
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>Компромисс</dt>
+                                <dd>
+                                    Поиск пути проходит дерево уровень за
+                                    уровнем, а find запускает полный DFS-обход
+                                </dd>
+                            </div>
+                        </dl>
+                        <p class="best-for">
+                            <span>Подходит для</span> больших деревьев при
+                            жёстком лимите памяти
+                        </p>
+                    </article>
+
+                    <article class="system-card system-b">
+                        <div class="system-top">
+                            <span class="system-letter">B</span>
+                        </div>
+                        <p class="system-code">FileSystemB</p>
+                        <h3>Дерево с индексом путей</h3>
+                        <p class="system-copy">
+                            Сохраняет обычное дерево, но дополнительно ведёт
+                            хеш-таблицу «полный путь → узел» и учитывает
+                            выделения через PMR.
+                        </p>
+                        <dl>
+                            <div>
+                                <dt>Сильная сторона</dt>
+                                <dd>
+                                    Быстрый прямой доступ к файлу по известному
+                                    полному пути
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>Компромисс</dt>
+                                <dd>
+                                    Индекс занимает больше памяти, а перемещение
+                                    требует переиндексации всего поддерева
+                                </dd>
+                            </div>
+                        </dl>
+                        <p class="best-for">
+                            <span>Подходит для</span> частых чтений и записей
+                            при редких перемещениях
+                        </p>
+                    </article>
+
+                    <article class="system-card system-c">
+                        <div class="system-top">
+                            <span class="system-letter">C</span>
+                        </div>
+                        <p class="system-code">FlatHashFileSystem</p>
+                        <h3>Плоская хеш-таблица</h3>
+                        <p class="system-copy">
+                            Вместо связанного дерева хранит все объекты в одной
+                            хеш-таблице, где ключом выступает полный путь к
+                            файлу или каталогу.
+                        </p>
+                        <dl>
+                            <div>
+                                <dt>Сильная сторона</dt>
+                                <dd>
+                                    Простая структура и быстрый точечный поиск
+                                    полного пути
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>Компромисс</dt>
+                                <dd>
+                                    ls и find сканируют таблицу, а перенос
+                                    каталога переписывает пути его потомков
+                                </dd>
+                            </div>
+                        </dl>
+                        <p class="best-for">
+                            <span>Подходит для</span> компактных деревьев с
+                            преобладанием точечных операций
+                        </p>
+                    </article>
+                </div>
+            </section>
+        </main>
+        <footer>
+            <span>Учебный исследовательский проект</span
+            ><span>Модель сравнивает подходы A / B / C</span>
+        </footer>
+    </body>
+</html>

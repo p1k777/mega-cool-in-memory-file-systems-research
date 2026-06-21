@@ -10,9 +10,9 @@ def predict_metrics(params: dict) -> dict:
     P_find = params['P_find']
     dist = params['Dist']
     alpha = params['Zipf_Alpha']
-    
+
     estimated_nodes = int((W * D) * F * 100)
-    if estimated_nodes < 500: 
+    if estimated_nodes < 500:
         estimated_nodes = 500
 
     zipf_bonus = 1.0
@@ -20,15 +20,15 @@ def predict_metrics(params: dict) -> dict:
         zipf_bonus = max(0.4, 1.0 - (alpha * 0.25))
 
     latency_A = (4.0 + (D * 1.8) + (P_ls * 45.0) + (P_find * 110.0)) * zipf_bonus
-    memory_A = estimated_nodes * 48  
+    memory_A = estimated_nodes * 48
     throughput_A = 1000000.0 / latency_A
 
     latency_B = (1.8 + (P_mv * D * 180.0) + (P_find * 30.0)) * (zipf_bonus * 0.8 if dist == 'zipf' else 1.0)
-    memory_B = estimated_nodes * 160  
+    memory_B = estimated_nodes * 160
     throughput_B = 1000000.0 / latency_B
 
     latency_C = 2.5 + (P_ls * estimated_nodes * 0.02) + (P_find * estimated_nodes * 0.05)
-    memory_C = estimated_nodes * 112  
+    memory_C = estimated_nodes * 112
     throughput_C = 1000000.0 / latency_C
 
     return {
@@ -60,13 +60,13 @@ def get_input_distribution():
 
 def collect_and_validate_params() -> dict:
     print("Параметры виртуальной ФС:")
-    D = get_input_scalar("Глубина дерева D (целое от 1 до 50): ", 1, 50, is_int=True)
-    W = get_input_scalar("Ширина дерева W (целое от 1 до 100): ", 1, 5000, is_int=True)
+    D = get_input_scalar("Глубина дерева D (целое от 1 до 20): ", 1, 20, is_int=True)
+    W = get_input_scalar("Ширина дерева W (целое от 1 до 70): ", 1, 70, is_int=True)
     F = get_input_scalar("Коэффициент заполнения F (дробь от 0.01 до 1.0): ", 0.01, 1.0)
 
     print("Профиль нагрузки:")
     print("Сумма всех 6 вероятностей должна быть равна 1.0")
-    
+
     while True:
         p_read = get_input_scalar("  Вероятность чтения P_read: ", 0.0, 1.0)
         p_write = get_input_scalar("  Вероятность записи P_write: ", 0.0, 1.0)
@@ -74,7 +74,7 @@ def collect_and_validate_params() -> dict:
         p_ls = get_input_scalar("  Вероятность вывода списка P_ls: ", 0.0, 1.0)
         p_mv = get_input_scalar("  Вероятность перемещения P_mv: ", 0.0, 1.0)
         p_find = get_input_scalar("  Вероятность глобального поиска P_find: ", 0.0, 1.0)
-        
+
         total_p = p_read + p_write + p_mkdir + p_ls + p_mv + p_find
         if abs(total_p - 1.0) < 1e-4:
             break
@@ -107,14 +107,14 @@ def select_best_approach_auto(predictions: dict) -> tuple:
     max_thr, min_thr = max(all_thr), min(all_thr)
 
     def normalize(val, min_v, max_v, is_cost=True):
-        if max_v == min_v: 
+        if max_v == min_v:
             return 1.0
         return (max_v - val) / (max_v - min_v) if is_cost else (val - min_v) / (max_v - min_v)
 
     scores = {}
     for cand in candidates:
         m = predictions[cand]
-        
+
         n_lat = max(normalize(m['mean_latency'], min_lat, max_lat, is_cost=True), 0.01)
         n_p99 = max(normalize(m['p99_latency'], min_p99, max_p99, is_cost=True), 0.01)
         n_mem = max(normalize(m['memory'], min_mem, max_mem, is_cost=True), 0.01)
@@ -128,14 +128,14 @@ def select_best_approach_auto(predictions: dict) -> tuple:
 def main():
     print("СИСТЕМА АВТОМАТИЧЕСКОГО ПОДБОРА IN-MEMORY ФАЙЛОВЫХ СИСТЕМ")
     print()
-    
+
     params = collect_and_validate_params()
     predictions = predict_metrics(params)
     best, scores = select_best_approach_auto(predictions)
-    
+
     print()
     print("-" * 66)
-    
+
     for app, metrics in predictions.items():
         status_prefix = "[РЕКОМЕНДУЕТСЯ]" if app == best else "               "
         print(f"{status_prefix} Подход {app}:")
@@ -145,7 +145,7 @@ def main():
         print(f"    Пропускная способность: {metrics['throughput']:.2f} оп/сек")
         print(f"    Коэффициент пригодности: {scores[app]:.4f}")
         print("-" * 66)
-        
+
     print(f"ИТОГОВОЕ РЕШЕНИЕ: Для заданных условий оптимально развернуть подход {best}")
 
 if __name__ == "__main__":
