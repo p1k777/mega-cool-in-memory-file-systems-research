@@ -26,7 +26,6 @@ public:
 
     void op_mv(const path_type&, const path_type&) override;
     units_list_type op_find(const path_type&, const path_type&) const override;
-
     size_t get_memory_usage() const noexcept override;
 
 private:

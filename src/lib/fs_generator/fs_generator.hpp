@@ -39,7 +39,7 @@ namespace fsgenerator {
 
     public:
 
-        FsGenerator(size_t D, size_t W, double F, double file_p=0.5, size_t max_nodes_count=1e7);
+        FsGenerator(size_t D, size_t W, double F, double file_p=0.5, size_t max_nodes_count=3e6);
 
         FsGenerator(const FsGenerator&) = delete;
         FsGenerator(FsGenerator&&) = delete;
@@ -58,6 +58,7 @@ namespace fsgenerator {
 
         void add_root_();
         void grow_spine_();
+        void ensure_file_exists_();
         void add_node_(size_t parent, rnd::Random&);
         void add_dir_(std::string name, size_t parent, bool is_root=false);
         void add_file_(std::string name, size_t parent);

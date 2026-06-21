@@ -8,6 +8,8 @@
 #include "../filesystem.hpp"
 #include "generated_fs.hpp"
 
+#include <iostream>
+
 namespace fsgenerator {
 
 
@@ -25,6 +27,7 @@ namespace fsgenerator {
         );
 
         fs_.reserve(tree_.size());
+        fs_to_tree_.reserve(tree_.size());
 
         std::vector<size_t> tree_to_fs(tree_.size());
 
@@ -65,6 +68,7 @@ namespace fsgenerator {
                 .path = std::move(path),
                 .is_file = node.is_file
             });
+            fs_to_tree_.push_back(tree_idx);
         }
 
         if (!root_found) { throw std::invalid_argument("Provided tree must contain the root"); }
@@ -75,13 +79,17 @@ namespace fsgenerator {
         return *this;
     }
 
-    void GeneratedFs::fill(filesystem::IFileSystem& fs_impl) {
-        for (auto& node : fs_) {
+    void GeneratedFs::fill(filesystem::IFileSystem& fs_impl) const {
+        for (const auto& node : fs_) {
+            if (node.path == "/") { continue; }
+
             if (node.is_file) {
                 fs_impl.op_write(node.path, {'p', 'a', 'y', 'l', 'o', 'a', 'd'});
             } else {
                 fs_impl.op_mkdir(node.path);
             }
+
+            // std::cout << "[GEN_FS] Added '" << node.path << "'\n";
         }
     }
     
@@ -97,6 +105,10 @@ namespace fsgenerator {
     }
     const GeneratedFs::tree_node_type& GeneratedFs::get_node(size_t idx) const {
         return tree_.at(idx);
+    }
+
+    const GeneratedFs::tree_node_type& GeneratedFs::get_tree_node_for_fs_index(size_t idx) const {
+        return tree_.at(fs_to_tree_.at(idx));
     }
 
 }; // namespace fsgenerator

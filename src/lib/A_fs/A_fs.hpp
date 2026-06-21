@@ -10,6 +10,12 @@ namespace filesystem {
 
 class TreeFileSystem final : public IFileSystem {
 public:
+    TreeFileSystem() = default;
+    TreeFileSystem(const TreeFileSystem& other);
+    TreeFileSystem& operator=(const TreeFileSystem& other);
+    TreeFileSystem(TreeFileSystem&&) noexcept = default;
+    TreeFileSystem& operator=(TreeFileSystem&&) noexcept = default;
+
     bytes_type op_read(const path_type& path) const override;
     void op_write(const path_type& path, const bytes_type& bytes) override;
 
@@ -18,7 +24,6 @@ public:
 
     void op_mv(const path_type& from, const path_type& to) override;
     units_list_type op_find(const path_type& root, const path_type& pattern) const override;
-
     size_t get_memory_usage() const noexcept override;
 
 private:
@@ -59,6 +64,7 @@ private:
         units_list_type& result
     );
 
+    static std::unique_ptr<Node> clone_node(const Node& node, Node* parent);
     static size_t memory_usage_of(const Node& node) noexcept;
 };
 

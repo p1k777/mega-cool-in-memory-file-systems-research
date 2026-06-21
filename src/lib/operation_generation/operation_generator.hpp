@@ -1,6 +1,6 @@
 #pragma once
 
-#include "operation_type.hpp"
+#include "common.hpp"
 
 #include <cstddef>
 #include <vector>

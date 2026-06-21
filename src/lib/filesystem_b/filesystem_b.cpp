@@ -426,6 +426,20 @@ std::unique_ptr<FileSystemB::Node> FileSystemB::detach_from_parent(Node* node) {
     return owned;
 }
 
+std::unique_ptr<FileSystemB::Node> FileSystemB::clone_subtree(
+    const Node& node,
+    Node* parent
+) {
+    auto copy = create_node(to_path(node.name), parent, node.is_file);
+    copy->data.assign(node.data.begin(), node.data.end());
+
+    for (const auto& child : node.children) {
+        copy->children.push_back(clone_subtree(*child, copy.get()));
+    }
+
+    return copy;
+}
+
 void FileSystemB::validate_path(const path_type& path) {
     if(path.empty()) {
         throw std::runtime_error("path is empty");
