@@ -1,91 +1,68 @@
 #include "filesystem_b.hpp"
 
 #include <stdexcept>
-#include <regex>
 #include <algorithm>
+#include <utility>
 
 namespace filesystem {
 
-size_t FileSystemB::CountingMemoryResource::bytes_allocated() const noexcept {
-    return bytes_allocated_;
-}
-
-void* FileSystemB::CountingMemoryResource::do_allocate(size_t bytes, size_t alignment) {
-    bytes_allocated_ += bytes;
-    return upstream_->allocate(bytes, alignment);
-}
-
-void FileSystemB::CountingMemoryResource::do_deallocate(void* ptr, size_t bytes, size_t alignment) {
-    bytes_allocated_ -= bytes;
-    upstream_->deallocate(ptr, bytes, alignment);
-}
-
-bool FileSystemB::CountingMemoryResource::do_is_equal(const std::pmr::memory_resource& other) const noexcept {
-    return this == &other;
-}
-
-
-FileSystemB::PmrString FileSystemB::make_key(const path_type& path) const {
-    PmrString result{std::pmr::polymorphic_allocator<char>{const_cast<CountingMemoryResource*>(&memory_)}};
-    result.assign(path.begin(), path.end());
-    return result;
-}
-
-IFileSystem::path_type FileSystemB::to_path(const PmrString& value) {
-    return path_type(value.begin(), value.end());
-}
-
 std::unique_ptr<FileSystemB::Node> FileSystemB::create_node(std::string_view name, 
                                                                 Node* parent, bool is_file) {
-    auto node = std::make_unique<Node>(&memory_, name, parent);
+    auto node = std::make_unique<Node>(name, parent);
     node->is_file = is_file;
-
-    ++node_count_;
-
     return node;
 }
 
-FileSystemB::FileSystemB()
-    : root_(nullptr)
-    , index_(&memory_) {
+FileSystemB::FileSystemB() {
     root_ = create_node("", nullptr, false);
-    index_.emplace(make_key("/"), root_.get());
+    index_.emplace("/", root_.get());
 }
 
-FileSystemB::FileSystemB(const FileSystemB& other)
-    : root_(nullptr)
-    , index_(&memory_) {
-    root_ = clone_subtree(*other.root_, nullptr);
-    add_index_for_subtree(root_.get());
+FileSystemB::FileSystemB(const FileSystemB& other) {
+    index_.reserve(other.index_.size());
+    root_ = clone_node(*other.root_, nullptr, "/");
 }
 
 FileSystemB& FileSystemB::operator=(const FileSystemB& other) {
-    if (this == &other) {
+    if(this == &other) {
         return *this;
     }
 
-    index_.clear();
-    root_.reset();
-    node_count_ = 0;
-
-    root_ = clone_subtree(*other.root_, nullptr);
-    add_index_for_subtree(root_.get());
+    FileSystemB copy(other);
+    *this = std::move(copy);
 
     return *this;
 }
 
-FileSystemB::Node::Node(std::pmr::memory_resource* memory, std::string_view name_value,
-                                                        Node* parent_value)
-    : name(std::pmr::polymorphic_allocator<char>{memory})
-    , data(std::pmr::polymorphic_allocator<PmrByte>{memory})
-    , parent(parent_value)
-    , children(std::pmr::polymorphic_allocator<std::unique_ptr<Node>>{memory}) 
-{
-    name.assign(name_value.begin(), name_value.end());
+FileSystemB::Node::Node(std::string_view name_value, Node* parent_value)
+    : name(name_value)
+    , parent(parent_value){}
+
+std::unique_ptr<FileSystemB::Node> FileSystemB::clone_node(const Node& node, 
+                                                            Node* parent,const path_type& path) {
+    auto copy = std::make_unique<Node>(node.name, parent);
+
+    copy->is_file = node.is_file;
+    copy->data = node.data;
+    copy->children.reserve(node.children.size());
+
+    Node* raw = copy.get();
+    index_.emplace(path, raw);
+
+    for(const auto& child : node.children) {
+        const path_type child_path =
+            join_path(path, child->name);
+
+        copy->children.push_back(
+            clone_node(*child, raw, child_path)
+        );
+    }
+
+    return copy;
 }
 
 FileSystemB::Node* FileSystemB::get_node(const path_type& path) {
-    auto it = index_.find(make_key(path));
+    auto it = index_.find(path);
 
     if(it == index_.end()) {
         throw std::runtime_error("path does not exist");
@@ -95,7 +72,7 @@ FileSystemB::Node* FileSystemB::get_node(const path_type& path) {
 }
 
 const FileSystemB::Node* FileSystemB::get_node(const path_type& path) const {
-    auto it = index_.find(make_key(path));
+    auto it = index_.find(path);
 
     if(it == index_.end()) {
         throw std::runtime_error("path does not exist");
@@ -144,17 +121,13 @@ IFileSystem::bytes_type FileSystemB::op_read(const path_type& path) const {
         throw std::runtime_error("read from directory");
     }
 
-    return bytes_type(node->data.begin(), node->data.end());
+    return node->data;
 }
 
 void FileSystemB::op_mkdir(const path_type& path) {
     validate_path(path);
 
-    if(path == "/") {
-        return;
-    }
-
-    if(index_.find(make_key(path)) != index_.end()) {
+    if(index_.find(path) != index_.end()) {
         throw std::runtime_error("path already exists");
     }
 
@@ -172,13 +145,13 @@ void FileSystemB::op_mkdir(const path_type& path) {
     Node* raw = new_node.get();
 
     parent_node->children.push_back(std::move(new_node));
-    index_.emplace(make_key(path), raw);
+    index_.emplace(path, raw);
 }
 
 void FileSystemB::op_write(const path_type& path, const bytes_type& data) {
     validate_path(path); 
     
-    auto it = index_.find(make_key(path));
+    auto it = index_.find(path);
 
     if(it != index_.end()) {
         Node* node = it->second;
@@ -206,7 +179,7 @@ void FileSystemB::op_write(const path_type& path, const bytes_type& data) {
     Node* raw = new_node.get();
 
     parent_node->children.push_back(std::move(new_node));
-    index_.emplace(make_key(path), raw);
+    index_.emplace(path, raw);
 }
 
 IFileSystem::units_list_type FileSystemB::op_ls(const path_type& path) const {
@@ -221,7 +194,7 @@ IFileSystem::units_list_type FileSystemB::op_ls(const path_type& path) const {
     units_list_type result;
 
     for(const auto& child : node->children) {
-        result.push_back(join_path(path, to_path(child->name)));
+        result.push_back(join_path(path, child->name));
     }
 
     return result;
@@ -235,13 +208,13 @@ void FileSystemB::op_mv(const path_type& from, const path_type& to) {
         throw std::runtime_error("cannot move root");
     }
 
-    auto from_it = index_.find(make_key(from));
+    auto from_it = index_.find(from);
 
     if(from_it == index_.end()) {
         throw std::runtime_error("source does not exist");
     }
 
-    if(index_.find(make_key(to)) != index_.end()) {
+    if(index_.find(to) != index_.end()) {
         throw std::runtime_error("destination already exists");
     }
 
@@ -284,36 +257,74 @@ IFileSystem::units_list_type FileSystemB::op_find(const path_type& path, const p
     }
 
     units_list_type result;
-    find_dfs(node, pattern, result);
+    path_type current_path = path;
+
+    find_dfs(node, pattern, current_path, result);
 
     return result;
 }
 
-size_t FileSystemB::get_memory_usage() const noexcept {
-    return sizeof(*this) + node_count_ * sizeof(Node) + memory_.bytes_allocated();
+size_t FileSystemB::memory_usage_of(const Node& node) noexcept {
+    size_t usage =
+        sizeof(Node)
+        + node.name.capacity() * sizeof(char)
+        + node.data.capacity() * sizeof(bytes_type::value_type)
+        + node.children.capacity()
+              * sizeof(std::unique_ptr<Node>);
+
+    for(const auto& child : node.children) {
+        usage += memory_usage_of(*child);
+    }
+
+    return usage;
 }
 
-bool FileSystemB::matches_mask(const path_type& name, const path_type& mask) {
-    std::string regex_pattern = "^";
+size_t FileSystemB::get_memory_usage() const noexcept {
+    size_t usage = sizeof(*this) + memory_usage_of(*root_);
 
-    for(char c : mask) {
-        if(c == '*') {
-            regex_pattern += ".*";
-        } else if(c == '?') {
-            regex_pattern += ".";
-        } else if(c == '.' || c == '\\' || c == '+' || c == '(' || c == ')' ||
-                  c == '[' || c == ']' || c == '{' || c == '}' || c == '^' ||
-                  c == '$' || c == '|') {
-            regex_pattern += '\\';
-            regex_pattern += c;
+    usage += index_.bucket_count() * sizeof(void*);
+
+    for(const auto& [path, node] : index_) {
+        (void)node;
+
+        usage += sizeof(std::pair<const std::string, Node*>);
+        usage += path.capacity() * sizeof(char);
+    }
+
+    return usage;
+}
+
+bool FileSystemB::matches_mask(std::string_view name, std::string_view mask) {
+    if(mask == "*") {
+        return true;
+    }
+
+    size_t name_pos = 0;
+    size_t mask_pos = 0;
+    size_t star_pos = std::string_view::npos;
+    size_t match_after_star = 0;
+
+    while(name_pos < name.size()) {
+        if(mask_pos < mask.size() &&
+           (mask[mask_pos] == '?' || mask[mask_pos] == name[name_pos])) {
+            ++name_pos;
+            ++mask_pos;
+        } else if(mask_pos < mask.size() && mask[mask_pos] == '*') {
+            star_pos = mask_pos++;
+            match_after_star = name_pos;
+        } else if(star_pos != std::string_view::npos) {
+            mask_pos = star_pos + 1;
+            name_pos = ++match_after_star;
         } else {
-            regex_pattern += c;
+            return false;
         }
     }
 
-    regex_pattern += "$";
+    while(mask_pos < mask.size() && mask[mask_pos] == '*') {
+        ++mask_pos;
+    }
 
-    return std::regex_match(name, std::regex(regex_pattern));
+    return mask_pos == mask.size();
 }
 
 IFileSystem::path_type FileSystemB::build_path(const Node* node) const {
@@ -324,7 +335,7 @@ IFileSystem::path_type FileSystemB::build_path(const Node* node) const {
     std::vector<std::string> parts;
 
     while(node != nullptr && node != root_.get()) {
-        parts.push_back(to_path(node->name));
+        parts.push_back(node->name);
         node = node->parent;
     }
 
@@ -338,15 +349,24 @@ IFileSystem::path_type FileSystemB::build_path(const Node* node) const {
     return result.empty() ? "/" : result;
 }
 
-void FileSystemB::find_dfs(const Node* node, const path_type& pattern, units_list_type& result) const {
-    path_type current_path = build_path(node);
-
-    if(node != root_.get() && matches_mask(to_path(node->name), pattern)) {
+void FileSystemB::find_dfs(const Node* node, const path_type& pattern,
+                                path_type& current_path, units_list_type& result) const {
+    if(node != root_.get() && matches_mask(node->name, pattern)) {
         result.push_back(current_path);
     }
 
     for(const auto& child : node->children) {
-        find_dfs(child.get(), pattern, result);
+        size_t old_size = current_path.size();
+
+        if(current_path.back() != '/') {
+            current_path.push_back('/');
+        }
+
+        current_path.append(child->name.data(), child->name.size());
+
+        find_dfs(child.get(), pattern, current_path, result);
+
+        current_path.resize(old_size);
     }
 }
 
@@ -364,7 +384,11 @@ bool FileSystemB::is_inside(const path_type& from, const path_type& to) {
 
 void FileSystemB::erase_index_for_subtree(Node* node) {
     auto path = build_path(node);
-    index_.erase(make_key(path));
+    auto it = index_.find(path);
+
+    if(it != index_.end()) {
+        index_.erase(it);
+    }
 
     for(auto& child : node->children) {
         erase_index_for_subtree(child.get());
@@ -373,7 +397,7 @@ void FileSystemB::erase_index_for_subtree(Node* node) {
 
 void FileSystemB::add_index_for_subtree(Node* node) {
     auto path = build_path(node);
-    index_.emplace(make_key(path), node);
+    index_.emplace(path, node);
 
     for(auto& child : node->children) {
         add_index_for_subtree(child.get());
