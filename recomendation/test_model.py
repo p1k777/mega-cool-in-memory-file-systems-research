@@ -52,24 +52,25 @@ class RecommendationTests(unittest.TestCase):
         self.assertGreater(scores["B"], scores["A"])
 
     def test_specialized_strategies_keep_secondary_metrics(self):
-        primary_metric = {
-            "memory": "memory",
-            "latency": "mean_latency",
-            "p99": "p99_latency",
-            "throughput": "throughput",
-        }
-        for strategy, primary in primary_metric.items():
+        for strategy in ("memory", "latency", "throughput"):
             with self.subTest(strategy=strategy):
                 weights = STRATEGY_WEIGHTS[strategy]
-                self.assertAlmostEqual(weights[primary], 0.70)
                 self.assertAlmostEqual(sum(weights.values()), 1.0)
-                self.assertTrue(
-                    all(
-                        weight > 0
-                        for metric, weight in weights.items()
-                        if metric != primary
-                    )
-                )
+                self.assertTrue(all(weight > 0 for weight in weights.values()))
+
+        self.assertEqual(
+            STRATEGY_WEIGHTS["latency"],
+            {
+                "mean_latency": 0.60,
+                "p99_latency": 0.30,
+                "memory": 0.05,
+                "throughput": 0.05,
+            },
+        )
+        self.assertAlmostEqual(STRATEGY_WEIGHTS["memory"]["memory"], 0.70)
+        self.assertAlmostEqual(
+            STRATEGY_WEIGHTS["throughput"]["throughput"], 0.70
+        )
 
     def test_metric_strategies_select_their_best_candidate(self):
         predictions = {
@@ -94,7 +95,6 @@ class RecommendationTests(unittest.TestCase):
         }
         expected = {
             "latency": "A",
-            "p99": "B",
             "memory": "C",
             "throughput": "C",
         }
@@ -106,6 +106,11 @@ class RecommendationTests(unittest.TestCase):
     def test_rejects_unknown_strategy(self):
         with self.assertRaises(ValidationError) as context:
             recommend({**VALID, "Strategy": "unknown"})
+        self.assertIn("Strategy", context.exception.errors)
+
+    def test_rejects_removed_p99_strategy(self):
+        with self.assertRaises(ValidationError) as context:
+            recommend({**VALID, "Strategy": "p99"})
         self.assertIn("Strategy", context.exception.errors)
 
     def test_rejects_invalid_probability_sum(self):

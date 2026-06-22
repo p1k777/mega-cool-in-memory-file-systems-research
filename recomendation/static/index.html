@@ -8,8 +8,8 @@
             content="Подбор оптимальной in-memory файловой системы"
         />
         <title>Memory Match — рекомендатель файловой системы</title>
-        <link rel="stylesheet" href="styles.css" />
-        <script src="app.js" defer></script>
+        <link rel="stylesheet" href="styles.css?v=2" />
+        <script src="app.js?v=2" defer></script>
     </head>
     <body>
         <div class="glow one"></div>
@@ -320,22 +320,8 @@
                                 <span>
                                     <b>Приоритет задержки</b>
                                     <small
-                                        >70% средняя задержка · остальные по
-                                        10%</small
-                                    >
-                                </span>
-                            </label>
-                            <label class="strategy-option">
-                                <input
-                                    type="radio"
-                                    name="Strategy"
-                                    value="p99"
-                                />
-                                <span>
-                                    <b>Приоритет p99</b>
-                                    <small
-                                        >70% p99 · остальные метрики по
-                                        10%</small
+                                        >60% средняя задержка · 30% p99 ·
+                                        остальные по 5%</small
                                     >
                                 </span>
                             </label>
