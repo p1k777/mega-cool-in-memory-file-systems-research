@@ -24,7 +24,7 @@
                     <p class="eyebrow">In-memory filesystem advisor</p>
                     <h1>
                         Найдём архитектуру,<br /><em
-                            >которая выдержит нагрузку.</em
+                            >которая выдержит нагрузку</em
                         >
                     </h1>
                 </div>
@@ -268,6 +268,91 @@
                                     ><small>Локальный</small>
                                 </div></label
                             >
+                        </div>
+                    </section>
+                    <section class="form-section strategy-section">
+                        <div class="section-title">
+                            <span>04</span>
+                            <div>
+                                <h2>Стратегия выбора</h2>
+                                <p>
+                                    Укажите, какая метрика важнее для
+                                    рекомендации
+                                </p>
+                            </div>
+                        </div>
+                        <div class="strategy-grid">
+                            <label class="strategy-option">
+                                <input
+                                    type="radio"
+                                    name="Strategy"
+                                    value="balanced"
+                                    checked
+                                />
+                                <span>
+                                    <b>Сбалансированная</b>
+                                    <small
+                                        >По умолчанию · учитывает все
+                                        метрики</small
+                                    >
+                                </span>
+                            </label>
+                            <label class="strategy-option">
+                                <input
+                                    type="radio"
+                                    name="Strategy"
+                                    value="memory"
+                                />
+                                <span>
+                                    <b>Приоритет памяти</b>
+                                    <small
+                                        >70% память · остальные метрики по
+                                        10%</small
+                                    >
+                                </span>
+                            </label>
+                            <label class="strategy-option">
+                                <input
+                                    type="radio"
+                                    name="Strategy"
+                                    value="latency"
+                                />
+                                <span>
+                                    <b>Приоритет задержки</b>
+                                    <small
+                                        >70% средняя задержка · остальные по
+                                        10%</small
+                                    >
+                                </span>
+                            </label>
+                            <label class="strategy-option">
+                                <input
+                                    type="radio"
+                                    name="Strategy"
+                                    value="p99"
+                                />
+                                <span>
+                                    <b>Приоритет p99</b>
+                                    <small
+                                        >70% p99 · остальные метрики по
+                                        10%</small
+                                    >
+                                </span>
+                            </label>
+                            <label class="strategy-option">
+                                <input
+                                    type="radio"
+                                    name="Strategy"
+                                    value="throughput"
+                                />
+                                <span>
+                                    <b>Приоритет скорости</b>
+                                    <small
+                                        >70% скорость · остальные метрики по
+                                        10%</small
+                                    >
+                                </span>
+                            </label>
                         </div>
                     </section>
                     <button class="submit" type="submit">

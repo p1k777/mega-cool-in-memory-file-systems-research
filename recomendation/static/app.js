@@ -10,6 +10,33 @@ const alpha = document.querySelector("#alpha-field");
 const button = form.querySelector(".submit");
 const number = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 2 });
 const integer = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 });
+const strategyDetails = {
+    balanced: {
+        label: "Сбалансированная",
+        description:
+            "Учитывает среднюю и пиковую задержку, память и пропускную способность.",
+    },
+    memory: {
+        label: "Приоритет памяти",
+        description:
+            "Память имеет вес 70%, остальные метрики учитываются с весом 10%.",
+    },
+    latency: {
+        label: "Приоритет задержки",
+        description:
+            "Средняя задержка имеет вес 70%, остальные метрики — по 10%.",
+    },
+    p99: {
+        label: "Приоритет p99",
+        description:
+            "Пиковая задержка p99 имеет вес 70%, остальные метрики — по 10%.",
+    },
+    throughput: {
+        label: "Приоритет скорости",
+        description:
+            "Пропускная способность имеет вес 70%, остальные метрики — по 10%.",
+    },
+};
 
 function updateProbabilities() {
     probabilities.forEach((input, index) => {
@@ -70,14 +97,24 @@ document.querySelector("#balance").addEventListener("click", () => {
         (value, input) => value + Number(input.value),
         0,
     );
+
+    if (sum === 0) {
+        const basePercent = Math.floor(100 / probabilities.length);
+        const remainder = 100 - basePercent * probabilities.length;
+        probabilities.forEach((input, index) => {
+            const percent = basePercent + (index < remainder ? 1 : 0);
+            input.value = (percent / 100).toFixed(2);
+        });
+        updateProbabilities();
+        return;
+    }
+
     let used = 0;
     probabilities.forEach((input, index) => {
         const value =
-            sum === 0
-                ? 1 / probabilities.length
-                : index === probabilities.length - 1
-                  ? 1 - used
-                  : Math.round((Number(input.value) / sum) * 100) / 100;
+            index === probabilities.length - 1
+                ? 1 - used
+                : Math.round((Number(input.value) / sum) * 100) / 100;
         input.value = Math.max(0, Math.min(1, value)).toFixed(2);
         used += Number(input.value);
     });
@@ -88,7 +125,7 @@ function payload() {
     return Object.fromEntries(
         [...new FormData(form)].map(([key, value]) => [
             key,
-            key === "Dist" ? value : Number(value),
+            key === "Dist" || key === "Strategy" ? value : Number(value),
         ]),
     );
 }
@@ -107,6 +144,7 @@ function metricRow(label, value, width) {
 
 function render(data) {
     const best = data.predictions[data.best];
+    const strategy = strategyDetails[data.strategy] || strategyDetails.balanced;
     const values = (key) =>
         Object.values(data.predictions).map((item) => item[key]);
     const quality = (key, value, inverse = true) => {
@@ -157,11 +195,14 @@ function render(data) {
         data.best +
         '</h2><div class="badge">' +
         data.best +
-        '</div></div><p class="result-lead">Лучший баланс средней и пиковой ' +
-        "задержки, памяти и пропускной способности для заданного профиля.</p></div>" +
-        '<div class="tree"><span>Расчётный объём дерева</span><b>' +
+        '</div></div><p class="result-lead">' +
+        strategy.description +
+        "</p></div>" +
+        '<div class="tree"><span>Стратегия · <b>' +
+        strategy.label +
+        "</b></span><span>Объём · <b>" +
         integer.format(data.estimated_nodes) +
-        ' узлов</b></div><div class="metrics">' +
+        ' узлов</b></span></div><div class="metrics">' +
         metricRow(
             "Средняя задержка",
             number.format(best.mean_latency) + " мкс",
