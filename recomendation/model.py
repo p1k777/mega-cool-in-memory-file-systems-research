@@ -21,16 +21,10 @@ STRATEGY_WEIGHTS = {
         "throughput": 0.10,
     },
     "latency": {
-        "mean_latency": 0.70,
-        "p99_latency": 0.10,
-        "memory": 0.10,
-        "throughput": 0.10,
-    },
-    "p99": {
-        "mean_latency": 0.10,
-        "p99_latency": 0.70,
-        "memory": 0.10,
-        "throughput": 0.10,
+        "mean_latency": 0.60,
+        "p99_latency": 0.30,
+        "memory": 0.05,
+        "throughput": 0.05,
     },
     "throughput": {
         "mean_latency": 0.10,
