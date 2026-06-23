@@ -326,3 +326,20 @@ $ #image("../ml_model/assets/image-9.png", width: 110%) $
 
 - Функция предиктор
   - d25232152089eb32e47190018db7f1444fa9db59
+
+=== Кондратьев Игорь Андреевич
+_ Указаны только основные коммиты, не все  _
+- Random + Zipf
+  - 71c3758c0f12312a073dcff7feca6eb3ff6c3e52
+  - a5967a32e34d912c5d9d1262bd8dab54d1cf1ce8
+  - 849ee0747c3bdc9efeba20b169a2b1a214b4e195
+  - e933107356caeacf30dc34f49fc9c0469b65d550
+- Генератор файловой системы
+  - 200cc13b911432ab373a913dad51fbe8189a2fc0
+  - f959478395e9a81f767e1f3b70251a8ce66a26ab
+  - 68dc60e7f47d1cc09d3b36ca66e2d069fee5266b
+- Генератор путей
+  - e5fc778c1de2e91cc106e61d7aaea82fc3c2f57a
+  - e933107356caeacf30dc34f49fc9c0469b65d550
+  - 424578840c9f0d462e38cef97b784b4f1a0f5e5b
+  - ca0edab83cb6302f9ae63b60f1f2e80411cb3a21
