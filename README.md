@@ -1,6 +1,6 @@
-# In-memory File Systems Research
+# File Systems Research
 
-Проект исследует производительность трёх реализаций in-memory файловой системы и предоставляет воспроизводимый бенчмарк для их сравнения.
+Проект исследует производительность трёх реализаций файловой системы и предоставляет воспроизводимый бенчмарк для их сравнения.
 
 В репозитории присутствуют:
 
@@ -21,18 +21,16 @@
 4. Одна и та же подготовленная нагрузка прогоняется на одной из реализаций `A`, `B` или `C`.
 5. На выходе получаем CSV с метриками производительности.
 
-Это не файловая система уровня ОС и не FUSE-проект. Это исследовательский стенд для сравнения внутренних структур данных и стоимости типовых файловых операций.
-
 # Рекомендатель
 
 Локальный веб-интерфейс использует обученные Random Forest-модели для прогноза метрик систем A, B и C. В рекомендации можно задать приоритет памяти, задержки или пропускной способности. Стратегия задержки учитывает среднюю задержку с весом 60%, p99 — 30%, память и пропускную способность — по 5%. В остальных специализированных стратегиях приоритетная метрика получает вес 70%, остальные — по 10%; сбалансированная стратегия используется по умолчанию. Итоговый балл рассчитывается взвешенным геометрическим произведением нормализованных метрик.
 
-Python-зависимости рекомендателя перечислены в файле `recomendation/requirements.txt`. В нём зафиксирована совместимая версия `scikit-learn`, необходимая для корректной загрузки и работы обученных ML-моделей. При первоначальной настройке все зависимости устанавливаются одной командой: `python -m pip install -r requirements.txt`.
+Python-зависимости рекомендателя перечислены в файле `recommendation/requirements.txt`. В нём зафиксирована совместимая версия `scikit-learn`, необходимая для корректной загрузки и работы обученных ML-моделей. При первоначальной настройке все зависимости устанавливаются одной командой: `python -m pip install -r requirements.txt`.
 
 При первом запуске создайте виртуальное окружение и установите зависимости:
 
 ```bash
-cd recomendation
+cd recommendation
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
@@ -42,7 +40,7 @@ python app.py
 В дальнейшем зависимости повторно устанавливать не нужно. В новом терминале достаточно активировать существующее окружение и запустить приложение:
 
 ```bash
-cd recomendation
+cd recommendation
 source .venv/bin/activate
 python app.py
 ```
@@ -60,7 +58,7 @@ python3 -m unittest -v
 В проекте есть три реализации, все работают через общий интерфейс [`src/lib/filesystem.hpp`](/Users/igor/Documents/cpp_projects/prac/mega-cool-in-memory-file-systems-research/src/lib/filesystem.hpp):
 
 - `A` (`src/lib/A_fs`) - древовидная реализация `TreeFileSystem`.
-- `B` (`src/lib/filesystem_b`) - отдельная реализация `FileSystemB`.
+- `B` (`src/lib/B_fs`) - отдельная реализация `FileSystemB`.
 - `C` (`src/lib/C_fs`) - плоская hash-based реализация `FlatHashFileSystem`.
 
 Общий интерфейс поддерживает операции:
@@ -77,12 +75,10 @@ python3 -m unittest -v
 
 ```text
 .
-├── CMakeLists.txt
 ├── README.md
-├── BENCHMARK_RUNTIME_PREDICTION.md
 ├── scripts/
 │   └── run_bench_jobs.py
-├── recomendation/
+├── recommendation/
 │   ├── static/
 │   │   ├── index.html
 │   │   ├── styles.css
@@ -96,22 +92,16 @@ python3 -m unittest -v
 │   ├── CMakeLists.txt
 │   └── lib/
 │       ├── A_fs/                  # Реализация A
-│       ├── filesystem_b/          # Реализация B
+│       ├── B_fs/                  # Реализация B
 │       ├── C_fs/                  # Реализация C
 │       ├── fs_generator/          # Генерация синтетической FS
 │       ├── path_generator/        # Генерация путей для операций
 │       ├── operation_generation/  # Генерация типов операций
 │       ├── random/                # Вспомогательный RNG
 │       └── benchmark/             # Бенчмарк и CLI runner
-├── bench_results/                 # Примеры результатов
-├── bench_results_full/            # Полные результаты
-└── bench_results_full_3e6/        # Отдельный набор результатов
+├── ml_model/
+└── report/
 ```
-
-Ниже перечислены блоки, которые пока не оформлены в этом репозитории:
-
-- `TODO`: директория для обучения моделей качества / регрессии.
-- `TODO`: финальный отчёт или артефакты визуализации результатов.
 
 ## Требования
 
@@ -120,21 +110,21 @@ python3 -m unittest -v
 - `CMake >= 3.16`
 - компилятор с поддержкой `C++23`
 - `Python 3`
-- `GTest`, если нужно собирать и запускать тесты
+- доступ в сеть при первой конфигурации `BUILD_TESTING=ON`, чтобы `FetchContent` подтянул `googletest`
 
 Python-зависимостей для `scripts/run_bench_jobs.py` сейчас не требуется: скрипт использует только стандартную библиотеку.
 
 ## Сборка
 
 ```bash
-cmake -S . -B build
+cmake -S src -B build
 cmake --build build
 ```
 
 После сборки основной исполняемый файл бенчмарка:
 
 ```bash
-build/src/lib/benchmark/bench_run
+build/lib/benchmark/bench_run
 ```
 
 Если генератор сборки у вас раскладывает бинарники иначе, ориентируйтесь на цель `bench_run` из [`src/lib/benchmark/CMakeLists.txt`](/Users/igor/Documents/cpp_projects/prac/mega-cool-in-memory-file-systems-research/src/lib/benchmark/CMakeLists.txt).
@@ -146,7 +136,7 @@ CLI раннера реализован в [`src/lib/benchmark/bench_runner.cpp`
 Формат запуска:
 
 ```bash
-build/src/lib/benchmark/bench_run FS Repeats Ops Profile OutputCsv
+build/lib/benchmark/bench_run FS Repeats Ops Profile OutputCsv
 ```
 
 Где:
@@ -160,7 +150,7 @@ build/src/lib/benchmark/bench_run FS Repeats Ops Profile OutputCsv
 Пример:
 
 ```bash
-build/src/lib/benchmark/bench_run A 2 2000 build_system bench_results/results_A_build_system.csv
+build/lib/benchmark/bench_run A 2 2000 build_system bench_results/results_A_build_system.csv
 ```
 
 Поддерживаемые профили:
@@ -258,7 +248,7 @@ fs_type,depth,width,fill_factor,profile_name,p_read,p_write,p_mkdir,p_ls,p_mv,p_
 
 ```bash
 python3 scripts/run_bench_jobs.py \
-  --bench build/src/lib/benchmark/bench_run \
+  --bench build/lib/benchmark/bench_run \
   --fs A B C \
   --profiles build file db web \
   --repeats 2 \
@@ -273,21 +263,21 @@ python3 scripts/run_bench_jobs.py \
 - `--merge-csv <path>` - собрать один merged CSV из успешных jobs
 - `--dry-run` - только распечатать команды
 
-Скрипт также содержит грубую оценку ожидаемого времени выполнения job'ов. Подробности и инженерные оценки собраны в [`BENCHMARK_RUNTIME_PREDICTION.md`](/Users/igor/Documents/cpp_projects/prac/mega-cool-in-memory-file-systems-research/BENCHMARK_RUNTIME_PREDICTION.md).
+Скрипт также содержит грубую оценку ожидаемого времени выполнения job'ов.
 
 ## Тесты
 
-В проекте есть unit-тесты как минимум для:
+В проекте есть unit-тесты для:
 
 - `A_fs`
-- `filesystem_b`
+- `B_fs`
 - `C_fs`
 - `fs_generator`
 - `operation_generation`
 - `path_generator`
 - `random`
 
-Если `GTest` установлен и проект собран с `BUILD_TESTING=ON`, тесты можно запустить так:
+Если проект сконфигурирован с `BUILD_TESTING=ON`, `googletest` будет подтянут через `FetchContent`, после чего тесты можно запустить так:
 
 ```bash
 ctest --test-dir build --output-on-failure
@@ -298,21 +288,21 @@ ctest --test-dir build --output-on-failure
 Сборка:
 
 ```bash
-cmake -S . -B build
+cmake -S src -B build
 cmake --build build
 ```
 
 Один короткий прогон:
 
 ```bash
-build/src/lib/benchmark/bench_run A 1 1000 db /tmp/results_A_db.csv
+build/lib/benchmark/bench_run A 1 1000 db /tmp/results_A_db.csv
 ```
 
 Небольшой пакетный прогон:
 
 ```bash
 python3 scripts/run_bench_jobs.py \
-  --bench build/src/lib/benchmark/bench_run \
+  --bench build/lib/benchmark/bench_run \
   --fs A B C \
   --profiles db web build \
   --repeats 1 \
@@ -320,9 +310,3 @@ python3 scripts/run_bench_jobs.py \
   --jobs 3 \
   --output-dir bench_results
 ```
-
-## Ограничения и TODO
-
-- `TODO`: описать формальную постановку исследовательского кейса.
-- `TODO`: добавить ссылку на отчёт, если он существует вне репозитория.
-- `TODO`: добавить визуализации результатов и методику их интерпретации.

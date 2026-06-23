@@ -11,7 +11,7 @@
 #include "../path_generator/path_generator.hpp"
 #include "../operation_generation/operation_generator.hpp"
 #include "../A_fs/A_fs.hpp"
-#include "../filesystem_b/filesystem_b.hpp"
+#include "../B_fs/B_fs.hpp"
 #include "../C_fs/C_fs.hpp"
 
 namespace benchmark {

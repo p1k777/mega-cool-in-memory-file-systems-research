@@ -17,4 +17,6 @@ target_compile_options(filesystem_c
         -Wpedantic
 )
 
-add_subdirectory(tests)
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()

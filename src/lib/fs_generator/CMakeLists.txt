@@ -15,4 +15,6 @@ target_include_directories(fs_generator
         ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
-add_subdirectory(tests)
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()

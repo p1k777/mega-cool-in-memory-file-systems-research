@@ -10,4 +10,5 @@ target_link_libraries(filesystem_c_tests
         GTest::gtest_main
 )
 
+include(GoogleTest)
 gtest_discover_tests(filesystem_c_tests)

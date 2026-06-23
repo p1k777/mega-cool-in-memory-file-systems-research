@@ -13,7 +13,7 @@
 #include "bench.hpp"
 #include "../common.hpp"
 #include "../A_fs/A_fs.hpp"
-#include "../filesystem_b/filesystem_b.hpp"
+#include "../B_fs/B_fs.hpp"
 #include "../C_fs/C_fs.hpp"
 
 namespace {

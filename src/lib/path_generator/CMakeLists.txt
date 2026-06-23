@@ -1,9 +1,11 @@
-add_library(pathgen STATIC path_generator.cpp)
+add_library(path_generator STATIC path_generator.cpp)
 
-target_compile_features(pathgen PUBLIC cxx_std_23)
+target_compile_features(path_generator PUBLIC cxx_std_23)
 
-target_link_libraries(pathgen
+target_link_libraries(path_generator
     PUBLIC fs_generator
 )
 
-add_subdirectory(tests)
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()

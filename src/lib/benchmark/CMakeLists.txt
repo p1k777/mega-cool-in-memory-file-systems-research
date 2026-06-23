@@ -15,9 +15,9 @@ target_link_libraries(
     PUBLIC 
         rnd
         fs_generator
-        pathgen
+        path_generator
         filesystem_a
-        filesystem_b
+        B_fs
         filesystem_c
         operation_generation
 )
@@ -33,7 +33,7 @@ target_link_libraries(
     PUBLIC
         benchmark
         filesystem_a
-        filesystem_b
+        B_fs
         filesystem_c
 )
 
