@@ -1,0 +1,8 @@
+add_subdirectory(random)
+add_subdirectory(B_fs)
+add_subdirectory(operation_generation)
+add_subdirectory(fs_generator)
+add_subdirectory(A_fs)
+add_subdirectory(C_fs)
+add_subdirectory(path_generator)
+add_subdirectory(benchmark)
