@@ -532,6 +532,21 @@ $
   - fc824ec36c1a0ebabce6c5954a10a82ffab027e8
   - 3d918880ed5d8de0fe4b7a9fe19dfaef4a04f12b
 
+=== Шаченкова Екатерина
+- Реализация файловой системы A
+  - 5a64fe3f922e7ffa55176cbdabbcb412180fcc25
+  - 9ee83aced3c7453764f5b69f543ca7674b4ca4c6
+  - 1b8a5214ae16d791592c92f0171e56cb385c1c67
+  - 6f68b3c4e1d701a86c3b8ec5666bbf17d9680316
+  - cf545380594ca4a10bc1241add9f988dab998aff
+
+
+- Реализация файловой системы C
+  - 5a64fe3f922e7ffa55176cbdabbcb412180fcc25
+  - 9ee83aced3c7453764f5b69f543ca7674b4ca4c6
+  - 1b8a5214ae16d791592c92f0171e56cb385c1c67
+  - 6f68b3c4e1d701a86c3b8ec5666bbf17d9680316
+
 #pagebreak()
 
 = Приложение
