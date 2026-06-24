@@ -390,6 +390,7 @@ $ #image("../ml_model/assets/image-9.png", width: 110%) $
   [throughput_ops_sec], [0.4672], [*0.8808*], [627 442], [1 547 501], [579.56 %],
 )
 
+#pagebreak()
 
 = Рекомендатель файловой системы
 \
@@ -523,3 +524,16 @@ _ Указаны только основные коммиты, не все  _
   - 1ad01e4fbf3dff396a4167d8e1ef33a769ffcbcb
   - fc824ec36c1a0ebabce6c5954a10a82ffab027e8
   - 3d918880ed5d8de0fe4b7a9fe19dfaef4a04f12b
+
+#pagebreak()
+
+= Приложение
+
+== Рекомендатель
+
+#align(center, image("assets/photo_2026-06-24 13.23.48.jpeg", width: 90%))
+#align(center, image("assets/photo_2026-06-24 13.23.50.jpeg", width: 90%))
+#align(center, image("assets/photo_2026-06-24 13.23.52.jpeg", width: 90%))
+#align(center, image("assets/photo_2026-06-24 13.23.53.jpeg", width: 90%))
+#align(center, image("assets/photo_2026-06-24 13.23.55.jpeg", width: 90%))
+#align(center, image("assets/photo_2026-06-24 13.23.56.jpeg", width: 90%))
